@@ -21,7 +21,7 @@
 
 ## 📋 Prontuário do Espécime
 
-*   **Habitat**: Ambientes de Borda (Edge Computing), redes descentralizadas e dispositivos móveis (IoT).
+*   **Habitat**: Ambientes de Borda (Edge Computing), redes descentralizadas e dispositivos móveis (ex: Poco X4).
 *   **Morfologia**: Composta por um **Cérebro** (FastAPI) e um **Corpo** (Streamlit), protegida por uma sequência de DNA específica (`X-JELLY-DNA`).
 *   **Mecanismo de Defesa**: Arco reflexo baseado em **Z-Score**; injeta toxinas de log (SQLite) ao detectar flutuações anômalas no meio ambiente (Rede).
 *   **Nutrição**: Fagocitose de pacotes de dados e métricas de telemetria em tempo real.

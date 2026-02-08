@@ -10,3 +10,20 @@ jelly.db
 jelly.db-shm
 jelly.db-wal
 .DS_Store
+# Ignorar o Ambiente Virtual (O Oceano)
+jelly_env/
+venv/
+env/
+
+# Ignorar arquivos compilados do Python (Lixo)
+__pycache__/
+*.pyc
+
+# Ignorar o Banco de Dados (Segurança e Peso)
+*.db
+jelly.db
+*.sqlite3
+jelly_forensics.log
+
+# Ignorar chaves de API (Se criar um .env no futuro)
+.env
