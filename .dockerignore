@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+jelly_env/
+venv/
+.venv/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# Local files
+*.db
+*.log
+.env.local
+
+# Backups
+*_backup.py
+app_top.py
+
+# Tests (optional - remove if you want tests in container)
+tests/
+.github/

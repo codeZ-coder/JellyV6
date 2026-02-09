@@ -5,11 +5,25 @@ import sqlite3
 import subprocess
 import threading
 import os
+import sys
+import signal
+import logging
 from collections import deque
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
+
+# --- LOGGING ESTRUTURADO ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
+
+# Tempo de inicialização para health check
+STARTUP_TIME = time.time()
 
 # --- CONFIGURAÇÃO ---
 load_dotenv()
@@ -46,6 +60,14 @@ def init_db():
 app = FastAPI(title="Jelly Brain", description="Cérebro Híbrido: Forense & WAL")
 init_db()
 
+# --- GRACEFUL SHUTDOWN ---
+def graceful_shutdown(sig, frame):
+    logger.info("Jelly entrando em hibernação...")
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, graceful_shutdown)
+signal.signal(signal.SIGTERM, graceful_shutdown)
+
 # --- FUNÇÕES DE BD (Helpers) ---
 def salvar_memoria(key: str, value: float):
     try:
@@ -54,7 +76,7 @@ def salvar_memoria(key: str, value: float):
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Erro Memória: {e}")
+        logger.error(f"Erro Memória: {e}")
 
 def carregar_memoria(key: str, default: float) -> float:
     try:
@@ -82,9 +104,9 @@ def registrar_evento_forense(trigger: str, details: str):
                      (time.time(), trigger, details, snapshot))
         conn.commit()
         conn.close()
-        print(f"🕵️‍♂️ FORENSE REGISTRADA: {trigger}")
+        logger.warning(f"FORENSE REGISTRADA: {trigger}")
     except Exception as e:
-        print(f"❌ Erro Forense: {e}")
+        logger.error(f"Erro Forense: {e}")
 
 # --- ESTADO GLOBAL ---
 class BrainState:
@@ -101,7 +123,7 @@ class BrainState:
         
         # Carrega o Recorde Pessoal do banco
         self.max_down_kbps = carregar_memoria("max_down_kbps", 5000.0)
-        print(f"🧠 Memória Carregada: Recorde de Rede = {self.max_down_kbps/1024:.1f} MB/s")
+        logger.info(f"Memória Carregada: Recorde de Rede = {self.max_down_kbps/1024:.1f} MB/s")
 
 brain_state = BrainState()
 
@@ -198,6 +220,16 @@ def processar_instinto(cpu, ram, down, disk):
 
     return cor, status, speed, reflexo_ativo, stress_final, z_val
 
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Docker/Kubernetes"""
+    uptime = time.time() - STARTUP_TIME
+    return {
+        "status": "alive",
+        "uptime_seconds": round(uptime, 2),
+        "version": "6.0.0"
+    }
+
 @app.post("/feed")
 def feed_jelly():
     return {"status": "accepted", "msg": "Fagocitose Iniciada", "nutrients": "processed"}
@@ -232,9 +264,9 @@ def get_vitals():
             conn.commit()
             conn.close()
             brain_state.last_save = t
-            print(f"💾 Memória: Stress={score:.1f} | Rede Z={z_val:.1f}")
+            logger.info(f"Memória: Stress={score:.1f} | Rede Z={z_val:.1f}")
         except Exception as e:
-            print(f"Erro SQLite: {e}")
+            logger.error(f"Erro SQLite: {e}")
 
     return Vitals(
         cpu=cpu, ram=ram, disk_percent=disk, stress_score=score,

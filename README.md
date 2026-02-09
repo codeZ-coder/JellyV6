@@ -1,5 +1,10 @@
 # Jelly V6: Cyanea Capillata Digitalis 🪼
 
+[![CI](https://github.com/codeZ21/JellyV6/actions/workflows/ci.yml/badge.svg)](https://github.com/codeZ21/JellyV6/actions)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docker-compose.yml)
+
 > *"A natureza não faz nada em vão."* - Aristóteles
 
 ## 🧬 Classificação Científica / Taxonomia Digital
@@ -19,6 +24,20 @@
 
 ---
 
+## 🏗️ Arquitetura
+
+```mermaid
+graph LR
+    A[Edge Device] -->|psutil| B[Brain - FastAPI]
+    B -->|HTTP /vitals| C[Body - Streamlit]
+    B -->|SQLite WAL| D[(jelly.db)]
+    B -.->|Anomalia| E[Forensic Log]
+```
+
+> 📄 Documentação completa: [ARCHITECTURE.md](ARCHITECTURE.md)
+
+---
+
 ## 📋 Prontuário do Espécime
 
 *   **Habitat**: Ambientes de Borda (Edge Computing), redes descentralizadas e dispositivos móveis (ex: Poco X4).
@@ -30,85 +49,110 @@
 
 ## 🧠 Anatomia do Sistema
 
-O projeto é dividido em dois hemisférios que se comunicam via HTTP (Sinapses):
-
 ### 1. O Cérebro (`brain.py`) - Backend FastAPI
-O centro nervoso. Não possui interface gráfica, apenas lógica pura.
-*   **Neuroplasticidade (CPU)**: Utiliza médias móveis (`deque`) para "aprender" o que é uma carga normal. Se a CPU ficar em 50% por muito tempo, a Jelly se "acostuma" e para de alertar (Homeostase).
-*   **Z-Score (Rede)**: Analisa o desvio padrão do tráfego. Detecta anomalias estatísticas (picos súbitos) que fogem do padrão comportamental, não apenas valores fixos.
-*   **Memória de Longo Prazo**: SQLite com **WAL Mode** (Write-Ahead Logging) para garantir I/O não-bloqueante durante ataques.
-*   **Nematocistos (Forense)**: Ao detectar perigo, dispara uma thread que executa `ss -tunap` (Socket Statistics), tirando um "snapshot" dos processos e IPs criminosos.
+*   **Neuroplasticidade (CPU)**: Utiliza médias móveis para "aprender" o que é uma carga normal.
+*   **Z-Score (Rede)**: Detecta anomalias estatísticas (picos súbitos).
+*   **Memória de Longo Prazo**: SQLite com **WAL Mode**.
+*   **Nematocistos (Forense)**: Ao detectar perigo, executa `ss -tunap` e salva snapshot.
 
 ### 2. O Corpo (`app.py`) - Frontend Streamlit
-A manifestação visual da saúde do sistema.
-*   **Bioluminescência**: A cor da interface muda dinamicamente (**HSL**) baseada no Nível de Estresse (0-100).
-    *   **Ciano/Roxo**: Zen (Baixa atividade).
-    *   **Violeta**: Atividade Saudável.
-    *   **Laranja**: Estresse Elevado.
-    *   **Vermelho Sangue**: Pânico / Ataque Detectado.
-*   **Tentáculos Visuais**: Partículas CSS que reagem à velocidade da rede.
+*   **Bioluminescência**: Cores HSL dinâmicas (Ciano → Vermelho).
+*   **Tentáculos Visuais**: Partículas CSS reativas à velocidade da rede.
 
 ---
 
 ## 🛡️ Mecanismos de Defesa & Metabolismo
 
-A *Cyanea* implementa conceitos biológicos avançados aplicados à Cibersegurança:
-
 | Conceito Biológico | Implementação Técnica | Função |
 | :--- | :--- | :--- |
-| **Homeostase** | Adaptive Stress Scoring | O sistema aprende o "novo normal" para evitar falso-positivos em hardware variado. |
-| **Arco Reflexo** | Gatilhos Absolutos | Se CPU > 90% ou Rede > 80% do Máximo Histórico, o pânico é imediato (ignora adaptação). |
-| **Nematocisto** | Forensic Logging | Captura automática de evidências (IPs, Portas, PIDs) no momento exato da anomalia. |
-| **Fagocitose** | Garbage Collection | Limpeza de memória e identificação de processos parasitas. |
-| **DNA** | Auth Header | Token `X-JELLY-DNA` necessário para qualquer interação com o cérebro. |
+| **Homeostase** | Adaptive Stress Scoring | Aprende o "novo normal" |
+| **Arco Reflexo** | Gatilhos Absolutos | CPU > 90% = pânico imediato |
+| **Nematocisto** | Forensic Logging | Captura evidências no momento da anomalia |
+| **DNA** | Auth Header | Token `X-JELLY-DNA` para autenticação |
 
 ---
 
-## 🚀 Instalação e Habitat
+## 🚀 Quick Start
 
-A *Cyanea* prefere ambientes Linux/WSL, mas sobrevive em Windows.
-
-### 1. Preparar o Ecossistema
+### Com Docker (Recomendado)
 ```bash
-# Crie um ambiente virtual (Oceano Isolado)
+# Clone e configure
+git clone https://github.com/codeZ21/JellyV6.git
+cd JellyV6
+echo "JELLY_DNA_SECRET=seu_segredo_aqui" > .env
+
+# Suba os containers
+docker-compose up -d
+
+# Acesse
+# Brain API: http://localhost:8000/docs
+# Dashboard: http://localhost:8501
+```
+
+### Sem Docker
+```bash
+# Prepare o ambiente
 python -m venv jelly_env
 source jelly_env/bin/activate  # Linux/Mac
-# jelly_env\Scripts\activate   # Windows
-
-# Instale os nutrientes
 pip install -r requirements.txt
-```
 
-*(Certifique-se de configurar o arquivo `.env` com seu `JELLY_DNA_SECRET`)*
-
-### 2. Despertar o Cérebro (Terminal 1)
-```bash
+# Terminal 1: Cérebro
 python brain.py
-# O cérebro iniciará na porta 8000.
-# Ele começará a criar o banco de dados 'jelly.db' e aprender seus limites de rede.
+
+# Terminal 2: Corpo
+streamlit run app.py
 ```
 
-### 3. Materializar o Corpo (Terminal 2)
+---
+
+## 🧪 Testes
+
 ```bash
-streamlit run app.py
-# O corpo se conectará ao cérebro e começará a bioluminescência.
+# Rodar testes
+pytest tests/ -v
+
+# Simular ataque (para demo)
+python scripts/predator.py
 ```
 
 ---
 
 ## 📂 Estrutura de Arquivos
 
-*   `brain.py`: API, Lógica Híbrida, Banco de Dados e Forense.
-*   `app.py`: Interface Reativa, CSS Biomimético e Cliente HTTP.
-*   `jelly.db`: Memória persistente (Histórico Vital + Evidências Forenses).
-*   `.env`: Variáveis de ambiente e Segredos Genéticos.
+```
+JellyV6/
+├── brain.py           # Backend FastAPI
+├── app.py             # Frontend Streamlit
+├── jelly.db           # Memória persistente
+├── .env               # Segredos
+├── Dockerfile         # Container image
+├── docker-compose.yml # Orquestração
+├── ARCHITECTURE.md    # Documentação técnica
+├── tests/             # Testes automatizados
+└── scripts/           # Scripts de demo
+```
 
 ---
 
 ## 🔮 Roadmap Evolutivo
 
-- [x] **Fase 1**: Monitoramento Reativo (Cores).
-- [x] **Fase 2**: Cérebro Híbrido (Estatística + Adaptação).
-- [x] **Fase 3**: Memória Persistente e Forense.
-- [ ] **Fase 4**: Honeypots Ativos (Portas Falsas).
-- [ ] **Fase 5**: Imunidade de Rebanho (Múltiplas Jellys conversando).
+- [x] **Fase 1**: Monitoramento Reativo (Cores)
+- [x] **Fase 2**: Cérebro Híbrido (Estatística + Adaptação)
+- [x] **Fase 3**: Memória Persistente e Forense
+- [ ] **Fase 4**: Honeypots Ativos (Portas Falsas)
+- [ ] **Fase 5**: Imunidade de Rebanho (Smack Swarm - SaaS)
+
+> Fase 5 transforma as Jellys Edge em um enxame distribuído com Dashboard Central. [Saiba mais](ARCHITECTURE.md#fase-5-imunidade-de-rebanho-smack-swarm)
+
+---
+
+## 📜 Licença
+
+MIT License - Use, modifique e distribua livremente.
+
+---
+
+<p align="center">
+  <b>Desenvolvido por codeZ 🪼</b><br>
+  <i>Secure Edge MLOps • Bio-Inspired Cybersecurity</i>
+</p>
