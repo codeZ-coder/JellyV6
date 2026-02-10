@@ -20,4 +20,4 @@ COPY . .
 
 # Default: run the brain (override in docker-compose for body)
 EXPOSE 8000
-CMD ["uvicorn", "brain:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "core.nervenet:app", "--host", "0.0.0.0", "--port", "8000"]

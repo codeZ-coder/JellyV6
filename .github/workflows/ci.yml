@@ -48,6 +48,10 @@ jobs:
       
       - name: 🔍 Check syntax
         run: |
-          python -m py_compile brain.py
-          python -m py_compile app.py
+          python -m py_compile core/nervenet.py
+          python -m py_compile core/rhopalium.py
+          python -m py_compile core/statocyst.py
+          python -m py_compile core/cnidocyte.py
+          python -m py_compile core/persistence.py
+          python -m py_compile interface/app.py
           echo "✅ Syntax check passed"

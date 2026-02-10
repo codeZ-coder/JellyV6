@@ -24,14 +24,16 @@
 
 ---
 
-## 🏗️ Arquitetura
+## 🏗️ Arquitetura NerveNet
 
 ```mermaid
 graph LR
-    A[Edge Device] -->|psutil| B[Brain - FastAPI]
-    B -->|HTTP /vitals| C[Body - Streamlit]
-    B -->|SQLite WAL| D[(jelly.db)]
-    B -.->|Anomalia| E[Forensic Log]
+    A[Edge Device] -->|psutil| R[Rhopalium<br/>Sensores]
+    R --> N[NerveNet<br/>FastAPI]
+    N --> S[Statocyst<br/>Z-Score]
+    N --> C[Cnidocyte<br/>Defesa]
+    N --> P[Persistence<br/>SQLite WAL]
+    N -->|HTTP /vitals| I[Interface<br/>Streamlit]
 ```
 
 > 📄 Documentação completa: [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -41,23 +43,26 @@ graph LR
 ## 📋 Prontuário do Espécime
 
 *   **Habitat**: Ambientes de Borda (Edge Computing), redes descentralizadas e dispositivos móveis (ex: Poco X4).
-*   **Morfologia**: Composta por um **Cérebro** (FastAPI) e um **Corpo** (Streamlit), protegida por uma sequência de DNA específica (`X-JELLY-DNA`).
+*   **Morfologia**: Composta por uma **NerveNet** (FastAPI) e um **Corpo** (Streamlit), protegida por uma sequência de DNA específica (`X-JELLY-DNA`).
 *   **Mecanismo de Defesa**: Arco reflexo baseado em **Z-Score**; injeta toxinas de log (SQLite) ao detectar flutuações anômalas no meio ambiente (Rede).
 *   **Nutrição**: Fagocitose de pacotes de dados e métricas de telemetria em tempo real.
 
 ---
 
-## 🧠 Anatomia do Sistema
+## 🧠 Anatomia do Sistema (NerveNet Modular)
 
-### 1. O Cérebro (`brain.py`) - Backend FastAPI
-*   **Neuroplasticidade (CPU)**: Utiliza médias móveis para "aprender" o que é uma carga normal.
-*   **Z-Score (Rede)**: Detecta anomalias estatísticas (picos súbitos).
-*   **Memória de Longo Prazo**: SQLite com **WAL Mode**.
-*   **Nematocistos (Forense)**: Ao detectar perigo, executa `ss -tunap` e salva snapshot.
+| Módulo | Arquivo | Responsabilidade |
+|---|---|---|
+| **NerveNet** | `core/nervenet.py` | Orquestrador FastAPI + endpoints |
+| **Rhopalium** | `core/rhopalium.py` | Sensores (psutil) |
+| **Statocyst** | `core/statocyst.py` | Z-Score + stress CPU |
+| **Cnidocyte** | `core/cnidocyte.py` | Defesa + cooldown + forense |
+| **Persistence** | `core/persistence.py` | SQLite WAL |
+| **Interface** | `interface/app.py` | Dashboard Streamlit |
 
-### 2. O Corpo (`app.py`) - Frontend Streamlit
-*   **Bioluminescência**: Cores HSL dinâmicas (Ciano → Vermelho).
-*   **Tentáculos Visuais**: Partículas CSS reativas à velocidade da rede.
+### Bioluminescência Semântica
+- **Corpo**: Saúde interna (CPU/RAM) → Ciano → Vermelho
+- **Tentáculos**: Saúde externa (Rede) → Ciano → Roxo → Branco
 
 ---
 
@@ -76,31 +81,27 @@ graph LR
 
 ### Com Docker (Recomendado)
 ```bash
-# Clone e configure
 git clone https://github.com/codeZ21/JellyV6.git
 cd JellyV6
 echo "JELLY_DNA_SECRET=seu_segredo_aqui" > .env
 
-# Suba os containers
 docker-compose up -d
 
-# Acesse
 # Brain API: http://localhost:8000/docs
 # Dashboard: http://localhost:8501
 ```
 
 ### Sem Docker
 ```bash
-# Prepare o ambiente
 python -m venv jelly_env
-source jelly_env/bin/activate  # Linux/Mac
+source jelly_env/bin/activate
 pip install -r requirements.txt
 
-# Terminal 1: Cérebro
-python brain.py
+# Terminal 1: NerveNet
+uvicorn core.nervenet:app --host 0.0.0.0 --port 8000
 
-# Terminal 2: Corpo
-streamlit run app.py
+# Terminal 2: Interface
+streamlit run interface/app.py
 ```
 
 ---
@@ -108,10 +109,9 @@ streamlit run app.py
 ## 🧪 Testes
 
 ```bash
-# Rodar testes
 pytest tests/ -v
 
-# Simular ataque (para demo)
+# Demo de ataque
 python scripts/predator.py
 ```
 
@@ -121,15 +121,28 @@ python scripts/predator.py
 
 ```
 JellyV6/
-├── brain.py           # Backend FastAPI
-├── app.py             # Frontend Streamlit
-├── jelly.db           # Memória persistente
-├── .env               # Segredos
-├── Dockerfile         # Container image
-├── docker-compose.yml # Orquestração
-├── ARCHITECTURE.md    # Documentação técnica
-├── tests/             # Testes automatizados
-└── scripts/           # Scripts de demo
+├── core/                  # 🧠 NerveNet (Rede Nervosa)
+│   ├── __init__.py
+│   ├── nervenet.py        # Orquestrador FastAPI
+│   ├── rhopalium.py       # Sensores (psutil)
+│   ├── statocyst.py       # Z-Score + stress
+│   ├── cnidocyte.py       # Defesa + forense
+│   └── persistence.py     # SQLite WAL
+│
+├── interface/             # 🪼 Corpo (Dashboard)
+│   └── app.py             # Streamlit
+│
+├── tests/                 # 🧪 Testes
+│   └── test_zscore.py
+│
+├── scripts/               # 🦈 Scripts de demo
+│   └── predator.py
+│
+├── .env                   # Segredos
+├── Dockerfile
+├── docker-compose.yml
+├── ARCHITECTURE.md
+└── README.md
 ```
 
 ---
@@ -139,16 +152,11 @@ JellyV6/
 - [x] **Fase 1**: Monitoramento Reativo (Cores)
 - [x] **Fase 2**: Cérebro Híbrido (Estatística + Adaptação)
 - [x] **Fase 3**: Memória Persistente e Forense
+- [x] **Fase 3.5**: Refatoração NerveNet (Modular)
 - [ ] **Fase 4**: Honeypots Ativos (Portas Falsas)
 - [ ] **Fase 5**: Imunidade de Rebanho (Smack Swarm - SaaS)
 
-> Fase 5 transforma as Jellys Edge em um enxame distribuído com Dashboard Central. [Saiba mais](ARCHITECTURE.md#fase-5-imunidade-de-rebanho-smack-swarm)
-
----
-
-## 📜 Licença
-
-MIT License - Use, modifique e distribua livremente.
+> Fase 5 transforma as Jellys Edge em um enxame distribuído com Dashboard Central. [Saiba mais](ARCHITECTURE.md)
 
 ---
 

@@ -13,21 +13,26 @@ graph TD
     User((Usuário/Admin))
     Hacker((Atacante))
 
-    subgraph "Jelly Ecosystem - Docker"
-        UI[Frontend: Streamlit<br/>Porta 8501]
-        API[Backend: FastAPI<br/>Porta 8000]
-        DB[(SQLite WAL<br/>jelly.db)]
+    subgraph "Jelly NerveNet - Docker"
+        subgraph "core/"
+            NN[nervenet.py<br/>Orquestrador FastAPI]
+            RH[rhopalium.py<br/>Sensores psutil]
+            ST[statocyst.py<br/>Z-Score + Stress]
+            CN[cnidocyte.py<br/>Defesa + Forense]
+            PR[persistence.py<br/>SQLite WAL]
+        end
+        UI[interface/app.py<br/>Streamlit]
     end
 
-    Discord[Webhook Discord]
-    OS[Sistema Operacional<br/>psutil]
-
     User -->|Visualiza| UI
-    Hacker -.->|DDoS/Scan| OS
-    UI -->|HTTP /vitals| API
-    API -->|Métricas| OS
-    API -->|Persiste| DB
-    API -.->|Alerta| Discord
+    Hacker -.->|DDoS/Scan| RH
+    UI -->|HTTP /vitals| NN
+    NN --> RH
+    NN --> ST
+    NN --> CN
+    CN --> PR
+    ST --> PR
+    NN --> PR
 ```
 
 ---
@@ -36,11 +41,11 @@ graph TD
 
 | ID | Requisito | Status |
 |---|---|---|
-| **RF001** | Monitorar CPU, RAM, Disco e Rede via psutil a cada 100ms | ✅ |
+| **RF001** | Monitorar CPU, RAM, Disco e Rede via psutil | ✅ |
 | **RF002** | Detectar anomalias via Z-Score (threshold > 3.0) | ✅ |
-| **RF003** | Disparar Nematocisto (log forense + block IP) em anomalias críticas | ✅ |
-| **RF004** | Interface biomimética com cores HSL dinâmicas (Ciano → Vermelho) | ✅ |
-| **RF005** | Persistir histórico vital e eventos forenses em SQLite WAL | ✅ |
+| **RF003** | Disparar Nematocisto (log forense) em anomalias | ✅ |
+| **RF004** | Cores separadas: Corpo (saúde interna) vs Tentáculos (rede) | ✅ |
+| **RF005** | Persistir histórico e eventos forenses em SQLite WAL | ✅ |
 | **RF006** | Health check endpoint para Docker/Kubernetes | ✅ |
 
 ---
@@ -50,46 +55,60 @@ graph TD
 | ID | Requisito | Implementação |
 |---|---|---|
 | **RNF001** | CPU < 5% em repouso | Loop otimizado + WAL |
-| **RNF002** | Segurança: shell=False, sanitização de inputs | subprocess seguro |
-| **RNF003** | Portabilidade: Linux/WSL/Docker | Container multi-arch |
-| **RNF004** | Graceful shutdown em SIGTERM | Signal handler |
+| **RNF002** | Segurança: shell=False | subprocess seguro |
+| **RNF003** | Portabilidade | Docker multi-arch |
+| **RNF004** | Graceful shutdown | Signal handler |
+| **RNF005** | Modularidade | 1 arquivo = 1 responsabilidade |
 
 ---
 
-## 🧬 Diagrama de Classes
+## 🧬 Diagrama de Classes (NerveNet Modular)
 
 ```mermaid
 classDiagram
-    class BrainState {
-        -deque cpu_history
-        -deque net_history
-        -float max_down_kbps
-        -int nematocisto_ativo
-        +monitor_vitals()
+    class Rhopalium {
+        -last_net
+        -last_time
+        +read_vitals() dict
     }
 
-    class Vitals {
-        +float cpu
-        +float ram
-        +float stress_score
-        +str status_text
-        +bool defense_mode
+    class Statocyst {
+        -cpu_history: deque
+        -net_history: deque
+        +max_down_kbps: float
+        +analyze_network(fluxo) tuple
+        +analyze_cpu_stress(cpu, ram) float
     }
 
-    class FastAPI {
+    class Cnidocyte {
+        -nematocisto_ativo: int
+        -persistence: Persistence
+        +avaliar_ameaca() bool
+        +get_status_text() str
+    }
+
+    class Persistence {
+        -db_name: str
+        +salvar_memoria(key, value)
+        +carregar_memoria(key) float
+        +registrar_forense_async()
+        +salvar_vitals()
+    }
+
+    class NerveNet {
+        +senses: Rhopalium
+        +balance: Statocyst
+        +defense: Cnidocyte
+        +persistence: Persistence
+        +processar_instinto() dict
         +get_vitals() Vitals
-        +health_check() dict
-        +feed_jelly() dict
     }
 
-    class Forensic {
-        +registrar_evento_forense()
-        +ss_tunap_snapshot()
-    }
-
-    FastAPI --> BrainState : uses
-    FastAPI --> Vitals : returns
-    BrainState --> Forensic : triggers
+    NerveNet --> Rhopalium
+    NerveNet --> Statocyst
+    NerveNet --> Cnidocyte
+    NerveNet --> Persistence
+    Cnidocyte --> Persistence
 ```
 
 ---
@@ -98,27 +117,42 @@ classDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Net as Network Interface
-    participant Brain as Jelly Brain
-    participant Nema as Nematocyst
-    participant DB as SQLite
-    participant UI as Dashboard
+    participant Rho as Rhopalium
+    participant NN as NerveNet
+    participant Stat as Statocyst
+    participant Cni as Cnidocyte
+    participant DB as Persistence
+    participant UI as Interface
 
-    Note over Brain: Estado: ZEN (Ciano)
+    Note over NN: Estado: ZEN (Ciano)
 
-    Net->>Brain: Pico de Tráfego (15MB/s)
-    Brain->>Brain: Calcula Z-Score = 4.8
-    
-    Brain->>Nema: Pressurizar()
-    Nema->>Net: Captura ss -tunap
-    Nema->>DB: Salva forensic_event
-    
-    Brain->>UI: Update: PANIC
-    UI->>UI: Muda cor para Vermelho
-    
-    Note over Brain: Cooldown 15 ciclos
-    Brain->>UI: Update: ZEN
+    Rho->>NN: read_vitals() → pico 15MB/s
+    NN->>Stat: analyze_network(15000)
+    Stat-->>NN: anomaly=True, z=4.8
+
+    NN->>Cni: avaliar_ameaca(anomaly=True)
+    Cni->>DB: registrar_forense_async("SATURAÇÃO")
+    Cni-->>NN: reflexo=True
+
+    NN->>DB: salvar_vitals()
+    NN-->>UI: Vitals(cor_body=red, cor_tentacles=red)
+    UI->>UI: Corpo vermelho + Tentáculos brilhantes
+
+    Note over NN: Cooldown 15 ciclos
+    NN-->>UI: Vitals(cor_body=cyan, cor_tentacles=cyan)
 ```
+
+---
+
+## 🎨 Bioluminescência Semântica
+
+| Domínio | Elemento | Escala de Cor | Significado |
+|---|---|---|---|
+| **Corpo** (Saúde Interna) | Campânula | Ciano → Amarelo → Vermelho | CPU/RAM stress |
+| **Tentáculos** (Saúde Externa) | Tentáculos | Ciano → Roxo → Branco | Atividade de rede |
+| **Oceano** | Partículas Phyto | Opacidade 0-100% | Download speed |
+| **Oceano** | Partículas Zoo | Opacidade 0-100% | Upload speed |
+| **Fundo** | Dirt overlay | Transparente → Marrom | RAM suja |
 
 ---
 
@@ -131,7 +165,7 @@ sequenceDiagram
 | **Sensores** | Psutil | Coleta de métricas OS |
 | **Matemática** | Statistics (StdDev) | Z-Score para anomalias |
 | **Persistência** | SQLite WAL | Memória neural + forense |
-| **Container** | Docker Compose | Orquestração brain + body |
+| **Container** | Docker Compose | Orquestração |
 | **CI/CD** | GitHub Actions | Testes automatizados |
 
 ---
@@ -144,21 +178,18 @@ gantt
     dateFormat  YYYY-MM
     section Core
     Monitoramento Reativo     :done, 2026-01, 1M
-    Cérebro Híbrido (Z-Score) :done, 2026-01, 1M
+    Cérebro Híbrido           :done, 2026-01, 1M
     Memória Persistente       :done, 2026-02, 1M
+    NerveNet Modular          :done, 2026-02, 1M
     section Future
     Honeypots Ativos          :active, 2026-03, 2M
-    Smack Swarm (Multi-Jelly) :2026-05, 3M
-    SaaS Dashboard Central    :2026-08, 3M
+    Smack Swarm               :2026-05, 3M
+    SaaS Dashboard            :2026-08, 3M
 ```
 
 ### Fase 5: Imunidade de Rebanho (Smack Swarm)
 
-A evolução natural do projeto é criar múltiplas Jellys conversando entre si:
-
-- **Jellys Edge**: Rodam em cada dispositivo (Poco X4, servidores, IoT)
-- **Jelly Queen**: Dashboard central que agrega dados de todas as Jellys
-- **Protocolo Smack**: Jellys compartilham threats detectados (like feromônios)
+Múltiplas Jellys conversando entre si:
 
 ```
 [Edge Jelly 1] ---> [Queen API] <--- [Edge Jelly 2]
@@ -172,17 +203,22 @@ A evolução natural do projeto é criar múltiplas Jellys conversando entre si:
 
 ```
 JellyV6/
-├── brain.py           # Backend FastAPI + Lógica de detecção
-├── app.py             # Frontend Streamlit + UI biomimética
-├── jelly.db           # Memória persistente (SQLite WAL)
-├── .env               # Segredos (JELLY_DNA_SECRET)
-├── Dockerfile         # Container image
-├── docker-compose.yml # Orquestração
+├── core/                  # NerveNet (Rede Nervosa)
+│   ├── __init__.py
+│   ├── nervenet.py        # Orquestrador FastAPI
+│   ├── rhopalium.py       # Sensores
+│   ├── statocyst.py       # Z-Score + Stress
+│   ├── cnidocyte.py       # Defesa + Forense
+│   └── persistence.py     # SQLite WAL
+├── interface/
+│   └── app.py             # Streamlit
 ├── tests/
-│   └── test_zscore.py # Testes automatizados
-└── .github/
-    └── workflows/
-        └── ci.yml     # GitHub Actions CI
+│   └── test_zscore.py
+├── scripts/
+│   └── predator.py
+├── Dockerfile
+├── docker-compose.yml
+└── .env
 ```
 
 ---

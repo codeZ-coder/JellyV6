@@ -23,7 +23,7 @@ services:
   body:
     build: .
     container_name: jelly-body
-    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+    command: streamlit run interface/app.py --server.port=8501 --server.address=0.0.0.0
     ports:
       - "8501:8501"
     environment:
