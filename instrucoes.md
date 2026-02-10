@@ -56,3 +56,32 @@ sqlite3 jelly.db "SELECT timestamp, trigger_type, details FROM forensic_events;"
 # Ver recorde de rede
 sqlite3 jelly.db "SELECT * FROM neuro_memory;"
 ```
+
+## 8. 🚀 Deploy no GitHub (Seguro)
+
+Antes de subir, limpe os arquivos antigos e garanta que segredos não vazem.
+
+### Passo 1: Limpeza (Faxina)
+```bash
+# Remove versões antigas (Lixo)
+rm brain.py app.py app_top.py app_backup.py package-lock.json
+
+# Garante que arquivos sensíveis não estão trackeados
+git rm --cached .env jelly.db -f || true
+```
+
+### Passo 2: Commit & Push
+```bash
+# Adiciona tudo (respeitando o .gitignore)
+git add .
+
+# Commit final
+git commit -m "feat: JellyV6 NerveNet Architecture Release 🪼"
+
+# Conecta ao seu repo remoto (Crie um repo vazio no GitHub primeiro!)
+git remote add origin https://github.com/SEU_USUARIO/JellyV6.git
+git branch -M main
+git push -u origin main
+```
+
+> **Nota de Segurança**: O arquivo `.gitignore` já está configurado para bloquear `.env` (senhas) e `jelly.db` (histórico sensível). Pode subir sem medo!
