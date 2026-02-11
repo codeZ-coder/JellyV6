@@ -1,9 +1,9 @@
 # Jelly V6: Cyanea Capillata Digitalis 🪼
 
-[![CI](https://github.com/codeZ21/JellyV6/actions/workflows/ci.yml/badge.svg)](https://github.com/codeZ21/JellyV6/actions)
+[![CI](https://github.com/codeZ-coder/JellyV6/actions/workflows/ci.yml/badge.svg)](https://github.com/codeZ-coder/JellyV6/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docker-compose.yml)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](./docker-compose.yml)
 
 > *"A natureza não faz nada em vão."* - Aristóteles
 
@@ -60,9 +60,14 @@ graph LR
 | **Persistence** | `core/persistence.py` | SQLite WAL |
 | **Interface** | `interface/app.py` | Dashboard Streamlit |
 
-### Bioluminescência Semântica
-- **Corpo**: Saúde interna (CPU/RAM) → Ciano → Vermelho
-- **Tentáculos**: Saúde externa (Rede) → Ciano → Roxo → Branco
+### 🔵 Bioluminescência (System Status)
+
+O sistema comunica seu estado através de padrões de cores inspirados na *Cyanea capillata*:
+
+| Componente | Estado Normal (Homeostase) | Estado de Alerta (Stress) | Estado Crítico (Pânico) |
+| :--- | :---: | :---: | :---: |
+| **Corpo (Soma)**<br>*(CPU/RAM)* | 🟢 **Ciano**<br>`Aproveitamento Eficiente` | 🟡 **Amarelo**<br>`Processamento Intenso` | 🔴 **Vermelho**<br>`Sobrecarga Iminente` |
+| **Tentáculos**<br>*(Rede/Latência)* | 🟢 **Ciano**<br>`Fluxo Estável` | 🟣 **Roxo**<br>`Congestionamento` | ⚪ **Branco**<br>`Perda de Sinal/Ataque` |
 
 ---
 
@@ -81,7 +86,7 @@ graph LR
 
 ### Com Docker (Recomendado)
 ```bash
-git clone https://github.com/codeZ21/JellyV6.git
+git clone https://github.com/codeZ-coder/JellyV6.git
 cd JellyV6
 echo "JELLY_DNA_SECRET=seu_segredo_aqui" > .env
 
