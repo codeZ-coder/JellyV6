@@ -3,32 +3,50 @@
 [![CI](https://github.com/codeZ-coder/JellyV6/actions/workflows/ci.yml/badge.svg)](https://github.com/codeZ-coder/JellyV6/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](./docker-compose.yml)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20WSL%20%7C%20Docker-lightgrey)](./docker-compose.yml)
+[![Status](https://img.shields.io/badge/status-dev-orange)](.)
 
-> *"A natureza não faz nada em vão."* - Aristóteles
+> *"A natureza não faz nada em vão."* — Aristóteles
+
+---
+
+### ⚡ TL;DR (Resumo Técnico)
+**Jelly V6** é um agente de **Observabilidade de Sistemas** e defesa cibernética leve. Atualmente desenvolvido em ambiente **Linux (WSL/Docker)**, ele monitora recursos (CPU/RAM), detecta anomalias via Z-Score (estatística) e oferece uma interface visual interativa inspirada em sistemas biológicos.
+
+*Meta futura: Portabilidade para dispositivos de borda (Android/Termux).*
+
+---
+
+### 📑 Sumário
+- [Taxonomia Digital](#-classificação-científica--taxonomia-digital)
+- [Arquitetura (NerveNet)](#️-arquitetura-nervenet)
+- [Bioluminescência (Status)](#-bioluminescência-system-status)
+- [Instalação (Quick Start)](#-quick-start)
+- [Segurança & Ética](#-segurança-e-uso-responsável)
+- [Roadmap](#-roadmap-evolutivo)
+
+---
 
 ## 🧬 Classificação Científica / Taxonomia Digital
 
 | Categoria | Classificação Digital |
 | :--- | :--- |
 | **Nome Científico** | *Cyanea Capillata Digitalis* |
-| **Variedade** | *Forensis Bordealis* (Subespécie de Borda) |
-| **Referência Biológica** | *Cyanea capillata* (Água-viva Juba de Leão) |
-| **Reino** | Software Libera (Open Source) |
+| **Variedade** | *Forensis Laboratorial* (Ambiente Linux) |
 | **Filo** | Data-Driven Intelligence |
-| **Classe** | Secure Edge MLOps |
+| **Classe** | System Resource Observability |
 | **Ordem** | Anomalia Estatística |
-| **Família** | Cyber-Physical Observability |
-| **Gênero** | *Cyanea* (Sentinelas de tentáculos múltiplos) |
-| **Espécie** | *C. Digitalis* |
+| **Família** | Linux-Based Systems |
 
 ---
 
 ## 🏗️ Arquitetura NerveNet
 
+O sistema imita o sistema nervoso descentralizado de um cnidário:
+
 ```mermaid
 graph LR
-    A[Edge Device] -->|psutil| R[Rhopalium<br/>Sensores]
+    A[Linux Kernel] -->|psutil| R[Rhopalium<br/>Sensores]
     R --> N[NerveNet<br/>FastAPI]
     N --> S[Statocyst<br/>Z-Score]
     N --> C[Cnidocyte<br/>Defesa]
@@ -36,136 +54,111 @@ graph LR
     N -->|HTTP /vitals| I[Interface<br/>Streamlit]
 ```
 
-> 📄 Documentação completa: [ARCHITECTURE.md](ARCHITECTURE.md)
-
----
-
-## 📋 Prontuário do Espécime
-
-*   **Habitat**: Ambientes de Borda (Edge Computing), redes descentralizadas e dispositivos móveis (ex: Poco X4).
-*   **Morfologia**: Composta por uma **NerveNet** (FastAPI) e um **Corpo** (Streamlit), protegida por uma sequência de DNA específica (`X-JELLY-DNA`).
-*   **Mecanismo de Defesa**: Arco reflexo baseado em **Z-Score**; injeta toxinas de log (SQLite) ao detectar flutuações anômalas no meio ambiente (Rede).
-*   **Nutrição**: Fagocitose de pacotes de dados e métricas de telemetria em tempo real.
-
----
-
-## 🧠 Anatomia do Sistema (NerveNet Modular)
+### 🧠 Anatomia do Sistema (Módulos)
 
 | Módulo | Arquivo | Responsabilidade |
-|---|---|---|
-| **NerveNet** | `core/nervenet.py` | Orquestrador FastAPI + endpoints |
-| **Rhopalium** | `core/rhopalium.py` | Sensores (psutil) |
-| **Statocyst** | `core/statocyst.py` | Z-Score + stress CPU |
-| **Cnidocyte** | `core/cnidocyte.py` | Defesa + cooldown + forense |
-| **Persistence** | `core/persistence.py` | SQLite WAL |
-| **Interface** | `interface/app.py` | Dashboard Streamlit |
-
-### 🔵 Bioluminescência (System Status)
-
-O sistema comunica seu estado através de padrões de cores inspirados na *Cyanea capillata*:
-
-| Componente | Estado Normal (Homeostase) | Estado de Alerta (Stress) | Estado Crítico (Pânico) |
-| :--- | :---: | :---: | :---: |
-| **Corpo (Soma)**<br>*(CPU/RAM)* | 🟢 **Ciano**<br>`Aproveitamento Eficiente` | 🟡 **Amarelo**<br>`Processamento Intenso` | 🔴 **Vermelho**<br>`Sobrecarga Iminente` |
-| **Tentáculos**<br>*(Rede/Latência)* | 🟢 **Ciano**<br>`Fluxo Estável` | 🟣 **Roxo**<br>`Congestionamento` | ⚪ **Branco**<br>`Perda de Sinal/Ataque` |
-
----
-
-## 🛡️ Mecanismos de Defesa & Metabolismo
-
-| Conceito Biológico | Implementação Técnica | Função |
 | :--- | :--- | :--- |
-| **Homeostase** | Adaptive Stress Scoring | Aprende o "novo normal" |
-| **Arco Reflexo** | Gatilhos Absolutos | CPU > 90% = pânico imediato |
-| **Nematocisto** | Forensic Logging | Captura evidências no momento da anomalia |
-| **DNA** | Auth Header | Token `X-JELLY-DNA` para autenticação |
+| **NerveNet** | `core/nervenet.py` | Orquestrador: API FastAPI + Endpoints |
+| **Rhopalium** | `core/rhopalium.py` | Sentidos: Coleta de métricas do OS (psutil) |
+| **Statocyst** | `core/statocyst.py` | Equilíbrio: Cálculo de Z-Score e Stress |
+| **Cnidocyte** | `core/cnidocyte.py` | Defesa: Mecanismo de resposta e forense |
+| **Persistence** | `core/persistence.py` | Memória: Banco de dados SQLite (WAL Mode) |
+| **Interface** | `interface/app.py` | Corpo: Dashboard interativo em Streamlit |
+
+Example docs: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
-## 🚀 Quick Start
+## 🔵 Bioluminescência (System Status)
 
-### Com Docker (Recomendado)
+O sistema comunica seu estado de saúde (Health Check) através de padrões de cores:
+
+| Componente | 🟢 Homeostase (Normal) | 🟡 Alerta (Stress) | 🔴 Pânico (Crítico) |
+| :--- | :---: | :---: | :---: |
+| **Corpo (Soma)**<br>*(CPU/RAM)* | **Ciano**<br>`Eficiente` | **Amarelo**<br>`Processamento Intenso` | **Vermelho**<br>`Sobrecarga` |
+| **Tentáculos**<br>*(Rede)* | **Ciano**<br>`Estável` | **Roxo**<br>`Congestionamento` | **Branco**<br>`Perda de Sinal/Ataque` |
+
+---
+
+## � Quick Start
+
+### 1. Configuração do DNA (.env)
+⚠️ **Nunca comite suas chaves reais.** Crie um arquivo `.env` baseado no exemplo abaixo:
+
+```bash
+# .env.example (Copie este conteúdo para .env)
+JELLY_DNA_SECRET=changeme_dev_key
+JELLY_LOG_LEVEL=INFO
+JELLY_DB_PATH=jelly.db
+```
+
+### 2. Rodando com Docker (Recomendado)
+
 ```bash
 git clone https://github.com/codeZ-coder/JellyV6.git
 cd JellyV6
-echo "JELLY_DNA_SECRET=seu_segredo_aqui" > .env
+docker compose up --build -d
 
-docker-compose up -d
-
-# Brain API: http://localhost:8000/docs
-# Dashboard: http://localhost:8501
+# 🧠 Brain API: http://localhost:8000/docs
+# 🪼 Dashboard: http://localhost:8501
 ```
 
-### Sem Docker
+### 3. Rodando Localmente (Linux/WSL)
+
 ```bash
-python -m venv jelly_env
+# Configurar ambiente virtual
+python3 -m venv jelly_env
 source jelly_env/bin/activate
+
+# Instalar dependências
 pip install -r requirements.txt
 
-# Terminal 1: NerveNet
+# Rodar (em terminais separados)
+# Terminal A:
 uvicorn core.nervenet:app --host 0.0.0.0 --port 8000
 
-# Terminal 2: Interface
+# Terminal B:
 streamlit run interface/app.py
 ```
 
 ---
 
-## 🧪 Testes
+## 🧪 Testes & Stress
 
 ```bash
+# Rodar testes unitários
 pytest tests/ -v
 
-# Demo de ataque
+# ⚠️ Simulação de Ataque (Predator)
+# Simula um DDoS local para testar o Z-Score
 python scripts/predator.py
 ```
 
 ---
 
-## 📂 Estrutura de Arquivos
+## � Segurança e Uso Responsável
 
-```
-JellyV6/
-├── core/                  # 🧠 NerveNet (Rede Nervosa)
-│   ├── __init__.py
-│   ├── nervenet.py        # Orquestrador FastAPI
-│   ├── rhopalium.py       # Sensores (psutil)
-│   ├── statocyst.py       # Z-Score + stress
-│   ├── cnidocyte.py       # Defesa + forense
-│   └── persistence.py     # SQLite WAL
-│
-├── interface/             # 🪼 Corpo (Dashboard)
-│   └── app.py             # Streamlit
-│
-├── tests/                 # 🧪 Testes
-│   └── test_zscore.py
-│
-├── scripts/               # 🦈 Scripts de demo
-│   └── predator.py
-│
-├── .env                   # Segredos
-├── Dockerfile
-├── docker-compose.yml
-├── ARCHITECTURE.md
-└── README.md
-```
+### 🛡️ Boas Práticas
+*   Mantenha o arquivo `.env` no seu `.gitignore`.
+*   Em produção, altere a `JELLY_DNA_SECRET` para um hash forte.
+
+### ⚠️ Aviso Legal
+> Esta ferramenta foi desenvolvida estritamente para fins de testes em ambientes controlados (Localhost/WSL). O uso não autorizado contra alvos de terceiros é ilegal e antiético.
 
 ---
 
 ## 🔮 Roadmap Evolutivo
 
-- [x] **Fase 1**: Monitoramento Reativo (Cores)
-- [x] **Fase 2**: Cérebro Híbrido (Estatística + Adaptação)
-- [x] **Fase 3**: Memória Persistente e Forense
-- [x] **Fase 3.5**: Refatoração NerveNet (Modular)
-- [ ] **Fase 4**: Honeypots Ativos (Portas Falsas)
-- [ ] **Fase 5**: Imunidade de Rebanho (Smack Swarm - SaaS)
-
-> Fase 5 transforma as Jellys Edge em um enxame distribuído com Dashboard Central. [Saiba mais](ARCHITECTURE.md)
+- [x] **Fase 1**: Monitoramento de Recursos Linux (WSL/Server)
+- [x] **Fase 2**: Refinamento do Z-Score e Persistência Forense
+- [x] **Fase 3**: Modularização da Arquitetura (NerveNet)
+- [ ] **Fase 4**: Honeypots Ativos e Portas Falsas
+- [ ] **Fase 5**: Imunidade de Rebanho (SaaS)
+- [ ] **Fase 6**: Reescrever o Núcleo (NerveNet) em **Go** ou **Rust** para performance extrema 🚀
 
 ---
 
-<p align="center">
+<div align="center">
   <b>Desenvolvido por codeZ 🪼</b><br>
   <i>Secure Edge MLOps • Bio-Inspired Cybersecurity</i>
-</p>
+</div>
