@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/codeZ-coder/JellyV6/actions/workflows/ci.yml/badge.svg)](https://github.com/codeZ-coder/JellyV6/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](./docker-compose.yml)
 
 > *"A natureza não faz nada em vão."* - Aristóteles
