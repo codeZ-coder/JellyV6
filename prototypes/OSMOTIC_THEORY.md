@@ -18,10 +18,10 @@ Diferente de firewalls tradicionais que operam em lógica binária (Allow/Deny),
 
 ## 2. Modelagem Matemática ($P(t)$)
 
-A integridade da membrana em um instante $t$ é dada pela função de Pressão Dinâmica:
+A integridade da membrana em um instante $t$ é dada pela função de Pressão Dinâmica (Leaky Bucket with Weights):
 
 $$
-P(t) = \left( \sum_{i=0}^{n} Q_{ion} \cdot M_{origem} \right) - (R_{rec} \cdot \Delta t)
+P(t) = \max\left(0, P(t-1) + (Q_{ion} \cdot M_{origem}) - (R_{rec} \cdot \Delta t)\right)
 $$
 
 Onde:
@@ -62,7 +62,15 @@ Quando o disparo letal ocorre, o sistema escolhe a toxina mais adequada:
 
 Em vez de operar isoladamente, as células (nós Jelly V6) compartilham o gradiente de pressão.
 
-*   **Sinapse Química (Gossip Protocol)**: Se um nó detecta alta concentração de íons (ataque), ele publica a assinatura do atacante via Redis/PubSub.
-*   **Endurecimento de Membrana**: Outros nós recebem o sinal e aumentam preventivamente a pressão basal para aquele IP/Assinatura, diminuindo o *Threshold* de ruptura.
+*   **Sinapse Química (Redis Pub/Sub)**: Se um nó detecta alta concentração de íons (ataque), ele publica a assinatura do atacante no canal `jelly_synapse`.
+*   **Endurecimento de Membrana**: Outros nós recebem o sinal e aumentam preventivamente a pressão basal para aquele IP, bloqueando antes mesmo do primeiro pacote chegar.
 
-Isso cria um sistema imunológico distribuído onde atacar um nó fortalece todos os outros instantaneamente.
+---
+
+## 5. Notas de Engenharia (Implementation Details)
+
+Recomendações técnicas para quando iniciarmos a codificação (Fase 4):
+
+*   **GZIP Bomb Segurança**: JAMAIS gerar a bomba dinamicamente (CPU Spike). Ter o arquivo `bomb.gzip` pré-gerado no disco e servir via stream (I/O Bound).
+*   **Tarpit Performance**: Implementar via `StreamingResponse` (Python Generator) para não travar threads do worker.
+*   **Armazenamento de Estado**: Usar Redis para guardar o $P(t)$ de cada IP, permitindo persistência e acesso rápido.
