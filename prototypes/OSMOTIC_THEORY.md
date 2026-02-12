@@ -24,19 +24,9 @@ $$
 P(t) = \max\left(0, P(t-1) + (Q_{ion} \cdot M_{origem}) - (R_{rec} \cdot \Delta t)\right)
 $$
 
-Onde:
-*   $Q_{ion}$: Carga base do evento (ex: 404 = +10 atm, SQLi = +50 atm).
-*   $M_{origem}$: Multiplicador de origem (Orgânico = 1.0, Inorgânico/Bot = 2.0+).
-*   $R_{rec}$: Taxa de Recuperação Osmótica (Homeostase), ex: -5 atm/seg.
-*   $\Delta t$: Tempo decorrido desde o último evento.
-
 ---
 
 ## 3. Estados de Resposta (Assimetria Defensiva)
-
-O sistema reage de forma diferente dependendo da natureza do estímulo (Orgânico vs Inorgânico).
-
-### Tabela de Respostas
 
 | Estado | Gatilho | Ação do Sistema (Cnidócito) | Efeito no Alvo |
 | :--- | :--- | :--- | :--- |
@@ -45,10 +35,9 @@ O sistema reage de forma diferente dependendo da natureza do estímulo (Orgânic
 | **Ejeção de Nematocisto** | $P(t) \ge Threshold$ **E** Inorgânico | **Disparo Letal** | Bloqueio (L3/L4) + Contra-ataque |
 
 ### O Arsenal do Nematocisto
-Quando o disparo letal ocorre, o sistema escolhe a toxina mais adequada:
 
 1.  **Neurotoxinas (Paralisia & Bloqueio)**:
-    *   **Tarpit (Paralisia)**: Mantém a conexão aberta respondendo 1 byte a cada 10s. Exaure sockets do atacante sem gastar recursos do defensor.
+    *   **Fluxo de Cálcio ($Ca^{2+}$)**: Tarpit Ativo. Responde 1 byte a cada 10s. Causa "cãibra" (thread locking) no cliente atacante.
     *   **Blackhole**: O tráfego é descartado silenciosamente (DROP).
     *   **TCP Reset**: A conexão é terminada forçadamente.
 
@@ -60,17 +49,26 @@ Quando o disparo letal ocorre, o sistema escolhe a toxina mais adequada:
 
 ## 4. Evolução Futura: Jelly Swarm (Imunidade de Rebanho)
 
-Em vez de operar isoladamente, as células (nós Jelly V6) compartilham o gradiente de pressão.
-
-*   **Sinapse Química (Redis Pub/Sub)**: Se um nó detecta alta concentração de íons (ataque), ele publica a assinatura do atacante no canal `jelly_synapse`.
-*   **Endurecimento de Membrana**: Outros nós recebem o sinal e aumentam preventivamente a pressão basal para aquele IP, bloqueando antes mesmo do primeiro pacote chegar.
+*   **Sinapse Química (Redis Pub/Sub)**: Compartilha assinaturas de ataque entre nós (Gossip Protocol).
+*   **Endurecimento de Membrana**: Aumento preventivo de pressão global.
 
 ---
 
-## 5. Notas de Engenharia (Implementation Details)
+## 5. Notas de Engenharia & Resiliência
 
-Recomendações técnicas para quando iniciarmos a codificação (Fase 4):
+### 💀 Tentáculos Destacados (Fossilized Persistence)
+O sistema deve sobreviver à morte do processo Python (App Crash ou Reboot).
 
-*   **GZIP Bomb Segurança**: JAMAIS gerar a bomba dinamicamente (CPU Spike). Ter o arquivo `bomb.gzip` pré-gerado no disco e servir via stream (I/O Bound).
-*   **Tarpit Performance**: Implementar via `StreamingResponse` (Python Generator) para não travar threads do worker.
-*   **Armazenamento de Estado**: Usar Redis para guardar o $P(t)$ de cada IP, permitindo persistência e acesso rápido.
+*   **Kernel-Level Rules**: Regras de `iptables` ou eBPF persistidas no sistema operacional.
+*   **Fossilização**: Ao detectar ataque crítico, o sistema salva as regras (`iptables-save > /etc/iptables/rules.v4`) para que os tentáculos continuem queimando mesmo se o "cérebro" (NerveNet) estiver desligado.
+
+### 🧪 Fluxo de Cálcio (Async Tarpit)
+Implementação de Tarpit com `StreamingResponse`:
+
+```python
+async def fluxo_de_calcio():
+    """Simula o fluxo descontrolado de íons. Envia lixo infinitamente."""
+    while True:
+        yield b"Ca2+" # O 'íon' digital
+        await asyncio.sleep(5) # A 'contração' contínua
+```
