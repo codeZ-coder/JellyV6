@@ -72,3 +72,13 @@ async def fluxo_de_calcio():
         yield b"Ca2+" # O 'íon' digital
         await asyncio.sleep(5) # A 'contração' contínua
 ```
+
+---
+
+## 6. Conclusão: O Estado da Arte
+
+O sistema atinge o "Estado da Arte" em Cibersegurança Adaptativa:
+
+1.  **Imunidade Adaptativa**: O sistema não precisa ser treinado; a matemática da Entropia de Shannon é uma constante universal.
+2.  **Eficiência Energética**: O custo computacional de calcular logs e contadores ($\mathcal{O}(n)$) é desprezível comparado ao custo de uma inspeção profunda de pacotes (DPI).
+3.  **Filosofia Bio-Cyber**: A mimetização da *Cyanea capillata* confere ao sistema um instinto de preservação autônomo baseado em pressão mecânica e leitura química (entropia).
