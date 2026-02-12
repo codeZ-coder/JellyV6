@@ -45,20 +45,24 @@ O sistema reage de forma diferente dependendo da natureza do estímulo (Orgânic
 | **Ejeção de Nematocisto** | $P(t) \ge Threshold$ **E** Inorgânico | **Disparo Letal** | Bloqueio (L3/L4) + Contra-ataque |
 
 ### O Arsenal do Nematocisto
-Quando o disparo letal ocorre, duas toxinas são liberadas:
+Quando o disparo letal ocorre, o sistema escolhe a toxina mais adequada:
 
-1.  **Neurotoxinas (Bloqueio)**:
-    *   `Blackhole Route`: O tráfego do atacante é descartado silenciosamente.
-    *   `TCP Reset`: A conexão é terminada forçadamente.
+1.  **Neurotoxinas (Paralisia & Bloqueio)**:
+    *   **Tarpit (Paralisia)**: Mantém a conexão aberta respondendo 1 byte a cada 10s. Exaure sockets do atacante sem gastar recursos do defensor.
+    *   **Blackhole**: O tráfego é descartado silenciosamente (DROP).
+    *   **TCP Reset**: A conexão é terminada forçadamente.
 
-2.  **Porinas Digitais (Contra-ataque)**:
-    *   **GZIP Bomb**: Payload de 10GB compactado em 1KB para exaurir RAM do atacante.
-    *   **Tarpit**: Mantém a conexão aberta infinitamente, gastando sockets do atacante.
+2.  **Porinas Digitais (Lise/Colapso)**:
+    *   **GZIP Bomb**: Payload comprimido que expande para gigabytes na memória do atacante.
     *   **Junks Data**: Respostas XML malformadas para quebrar parsers automatizados.
 
 ---
 
-## 4. Evolução Futura
+## 4. Evolução Futura: Jelly Swarm (Imunidade de Rebanho)
 
-*   [ ] **Fator de Imunidade de Rebanho**: Compartilhar $P(t)$ entre nós da rede (Jelly Swarm).
-*   [ ] **Adaptação Evolutiva**: Ajustar $Q_{ion}$ automaticamente baseando-se em novos vetores de ataque (Machine Learning).
+Em vez de operar isoladamente, as células (nós Jelly V6) compartilham o gradiente de pressão.
+
+*   **Sinapse Química (Gossip Protocol)**: Se um nó detecta alta concentração de íons (ataque), ele publica a assinatura do atacante via Redis/PubSub.
+*   **Endurecimento de Membrana**: Outros nós recebem o sinal e aumentam preventivamente a pressão basal para aquele IP/Assinatura, diminuindo o *Threshold* de ruptura.
+
+Isso cria um sistema imunológico distribuído onde atacar um nó fortalece todos os outros instantaneamente.
