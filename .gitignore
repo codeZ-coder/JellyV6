@@ -12,6 +12,7 @@ jelly.db-wal
 .DS_Store
 # Ignorar o Ambiente Virtual (O Oceano)
 jelly_env/
+jelly_venv/
 venv/
 env/
 
