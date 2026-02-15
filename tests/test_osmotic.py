@@ -118,7 +118,7 @@ class TestOsmoticMembrane:
             result = membrane.process_request("10.0.0.1", "/login", "python-requests/2.28")
         
         # Com threshold=10, decay=0, e 30 requests tóxicos, deve ter disparado
-        assert result["action"] in ("CONTRACT", "NEMATOCYST")
+        assert result["action"] in ("CONTRACT", "NEMATOCYST", "RUPTURA_MESOGLEIA")
 
     def test_homeostase_recupera(self):
         """Pressão decai com o tempo (homeostase)."""

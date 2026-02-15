@@ -26,3 +26,9 @@ jelly_forensics.log
 
 # Payloads de Defesa (Gerados localmente)
 assets/toxin.gz
+
+# Canary Files (Iscas com credenciais falsas)
+canary_nest/
+
+# Pytest
+.pytest_cache/

@@ -20,12 +20,24 @@ class Cnidocyte:
         self.nematocisto_ativo = 0  # Cooldown counter (ciclos restantes)
 
     def avaliar_ameaca(self, is_anomaly: bool, down: float,
-                       max_down_kbps: float, z_val: float) -> bool:
+                       max_down_kbps: float, z_val: float,
+                       osmotic_alert: str = None) -> bool:
         """
         Avalia se deve ativar defesa e gerencia cooldown.
         Retorna True se reflexo está ativo.
+        
+        Args:
+            osmotic_alert: Ação da membrana osmótica (NEMATOCYST, RUPTURA_MESOGLEIA, etc.)
         """
-        if is_anomaly and self.nematocisto_ativo == 0:
+        # Conexão Mente-Corpo: alerta osmótico ativa defesa imediatamente
+        if osmotic_alert in ("NEMATOCYST", "RUPTURA_MESOGLEIA"):
+            self.nematocisto_ativo = 15
+            self.persistence.registrar_forense_async(
+                "ALERTA_OSMOTICO",
+                f"Tipo: {osmotic_alert} | Flow: {down:.0f}"
+            )
+
+        elif is_anomaly and self.nematocisto_ativo == 0:
             # Ativa defesa por 15 ciclos
             self.nematocisto_ativo = 15
 
@@ -52,6 +64,7 @@ class Cnidocyte:
             self.nematocisto_ativo -= 1
 
         return reflexo_ativo
+
 
     def get_status_text(self, reflexo_ativo: bool, down: float,
                         max_down_kbps: float, z_val: float) -> str:

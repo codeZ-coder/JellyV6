@@ -158,7 +158,12 @@ class OsmoticMembrane:
             # 6. Decisão de Resposta
             action = "ALLOW"
             
-            if current_pressure > self.threshold * 2:
+            if current_pressure > self.threshold * 4:
+                # Pressão crítica: sinal de Ruptura (Turritopsis Protocol)
+                action = "RUPTURA_MESOGLEIA"
+                self.nematocyst_count += 1
+
+            elif current_pressure > self.threshold * 2:
                 if diagnosis in ("TOXINA_LETAL_BOTNET", "ALTA_TOXICIDADE_ALVO_FIXO"):
                     action = "NEMATOCYST"
                     self.nematocyst_count += 1
@@ -169,6 +174,7 @@ class OsmoticMembrane:
             elif current_pressure > self.threshold:
                 action = "CONTRACT"
                 self.contract_count += 1
+
 
             return {
                 "action": action,
