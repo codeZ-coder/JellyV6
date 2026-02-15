@@ -7,6 +7,7 @@ import time
 import sys
 import signal
 import os
+import gzip
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -47,10 +48,22 @@ membrane = OsmoticMembrane()
 
 logger.info(f"Memória Carregada: Recorde de Rede = {balance.max_down_kbps/1024:.1f} MB/s")
 
+# --- PRÉ-GERAÇÃO DA TOXINA (GZIP Bomb) ---
+TOXIN_PATH = "assets/toxin.gz"
+if not os.path.exists(TOXIN_PATH):
+    os.makedirs("assets", exist_ok=True)
+    chunk = b'\0' * (1024 * 1024)  # 1MB de zeros
+    with gzip.open(TOXIN_PATH, 'wb') as f:
+        for _ in range(10):  # 10MB descompactados
+            f.write(chunk)
+    logger.info(f"Toxina pré-gerada: {TOXIN_PATH} ({os.path.getsize(TOXIN_PATH)} bytes em disco)")
+else:
+    logger.info(f"Toxina carregada: {TOXIN_PATH}")
+
 # --- GRACEFUL SHUTDOWN ---
 def graceful_shutdown(sig, frame):
     logger.info("Jelly entrando em hibernação...")
-    sys.exit(0)
+    raise KeyboardInterrupt
 
 signal.signal(signal.SIGINT, graceful_shutdown)
 signal.signal(signal.SIGTERM, graceful_shutdown)

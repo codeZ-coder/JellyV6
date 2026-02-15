@@ -96,15 +96,34 @@ class OsmoticMembrane:
             )
             self.last_analysis_time = now
 
+    # Padrões de ataque óbvios (Reflexo Imediato / Gosto Ácido)
+    ACID_PATTERNS = ["../", "..\\", "%00", "%2e%2e", "UNION ", "SELECT ", "<script", "javascript:", "onerror="]
+
     def process_request(self, ip: str, url: str, ua: str) -> dict:
         """
         Processa uma requisição (thread-safe):
+        0. Gosto Ácido: Bloqueia exploits óbvios instantaneamente
         1. Adiciona ao buffer
         2. Analisa batch periodicamente
         3. Aplica pressão baseada na toxicidade do LOTE
         4. Decide ação
         """
         with self._lock:
+            # 0. GOSTO ÁCIDO — Reflexo imediato para payloads maliciosos
+            url_upper = url.upper()
+            for pattern in self.ACID_PATTERNS:
+                if pattern.upper() in url_upper:
+                    self.pressure_map[ip] = self.threshold * 3
+                    self.last_update_map[ip] = time.time()
+                    self.nematocyst_count += 1
+                    return {
+                        "action": "NEMATOCYST",
+                        "pressure": self.pressure_map[ip],
+                        "diagnosis": {"diagnosis": "ACIDEZ_IMEDIATA", "toxicity": 99.0, "pattern": pattern},
+                        "buffer_size": len(self.request_buffer),
+                        "toxin_path": self.toxin_path
+                    }
+
             # 1. Alimentar o buffer (acumula dados para o Chemoreceptor)
             self.request_buffer.append({
                 "ip": ip,

@@ -191,3 +191,26 @@ class TestOsmoticMembrane:
         """Verifica que o lock existe para thread safety."""
         assert hasattr(self.membrane, '_lock')
         assert isinstance(self.membrane._lock, type(self.membrane._lock))
+
+    # --- GOSTO ÁCIDO (Reflexo Imediato) ---
+
+    def test_acid_taste_path_traversal(self):
+        """URL com ../ deve disparar NEMATOCYST instantaneamente."""
+        result = self.membrane.process_request("10.0.0.1", "/../../etc/passwd", "curl")
+        assert result["action"] == "NEMATOCYST"
+        assert result["diagnosis"]["diagnosis"] == "ACIDEZ_IMEDIATA"
+
+    def test_acid_taste_sql_injection(self):
+        """URL com UNION SELECT deve disparar NEMATOCYST."""
+        result = self.membrane.process_request("10.0.0.2", "/search?q=1 UNION SELECT * FROM users", "bot")
+        assert result["action"] == "NEMATOCYST"
+
+    def test_acid_taste_xss(self):
+        """URL com <script> deve disparar NEMATOCYST."""
+        result = self.membrane.process_request("10.0.0.3", "/page?name=<script>alert(1)</script>", "chrome")
+        assert result["action"] == "NEMATOCYST"
+
+    def test_clean_url_no_acid(self):
+        """URL limpa NÃO deve disparar Gosto Ácido."""
+        result = self.membrane.process_request("192.168.1.1", "/api/health", "Mozilla/5.0")
+        assert result["action"] == "ALLOW"

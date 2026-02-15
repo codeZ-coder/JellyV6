@@ -83,6 +83,14 @@ class Persistence:
         except Exception as e:
             logger.error(f"Erro Forense: {e}")
 
+    def registrar_forense_async(self, trigger: str, details: str):
+        """Versão não-bloqueante do registrar_forense (roda em thread separada)."""
+        t = threading.Thread(
+            target=self.registrar_forense,
+            args=(trigger, details),
+            daemon=True
+        )
+        t.start()
 
 
     def salvar_vitals(self, t: float, cpu: float, ram: float,
