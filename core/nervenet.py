@@ -81,63 +81,64 @@ async def sistema_imunologico(request: Request, call_next):
     # Permite acesso aos docs sem auth
     if request.url.path in ["/docs", "/openapi.json", "/health"]:
         return await call_next(request)
-    token = request.headers.get("X-JELLY-DNA")
-    if token != JELLY_DNA_SECRET:
-        return JSONResponse(status_code=401, content={"erro": "REJEIÇÃO_IMUNOLÓGICA"})
-    
     # --- ANÁLISE OSMÓTICA (FASE 4) ---
+    # Defesa vem ANTES da autenticação para mitigar DDoS sem token
     jelly_type = request.headers.get("X-JELLY-TYPE", "FOREIGN")
     
     # Células do próprio corpo (Frontend) são ignoradas pela defesa
     if jelly_type == "SOMATIC":
-        return await call_next(request)
-
-    client_ip = request.client.host
-    url = str(request.url)
-    ua = request.headers.get("user-agent", "")
-    
-    defense_verdict = membrane.process_request(client_ip, url, ua)
-    action = defense_verdict["action"]
-    
-    if action == "CONTRACT":
-        # Rate Limiting / Tarpit leve (Contração Muscular)
-        logger.warning(f"Contração Muscular: Atrasando {client_ip} (Pressão: {defense_verdict['pressure']} atm)")
-        await asyncio.sleep(2.0) # Delay artificial
+        # Se for somático, ainda precisa autenticar!
+        pass 
+    else:
+        client_ip = request.client.host
+        url = str(request.url)
+        ua = request.headers.get("user-agent", "")
         
-    elif action == "NEMATOCYST":
-        # Resposta Letal (Porinas / GZIP Bomb)
-        logger.critical(f"NEMATOCISTO DISPARADO contra {client_ip}!")
-        # Registra no banco forense (persistência permanente) de forma ASSÍNCRONA e NON-BLOCKING (Fire-and-Forget)
-        async def log_background():
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(
-                None, 
-                persistence.registrar_forense,
-                "NEMATOCISTO_OSMOTICO",
-                f"IP: {client_ip} | Pressão: {defense_verdict['pressure']} atm | Buffer: {defense_verdict['buffer_size']}"
-            )
-        asyncio.create_task(log_background())
+        defense_verdict = membrane.process_request(client_ip, url, ua)
+        action = defense_verdict["action"]
         
-        async def toxin_stream():
-            toxin_path = defense_verdict["toxin_path"]
-            if os.path.exists(toxin_path):
-                with open(toxin_path, "rb") as f:
+        if action == "CONTRACT":
+            # Rate Limiting / Tarpit leve (Contração Muscular)
+            logger.warning(f"Contração Muscular: Atrasando {client_ip} (Pressão: {defense_verdict['pressure']} atm)")
+            await asyncio.sleep(2.0) # Delay artificial
+            
+        elif action == "NEMATOCYST":
+            # Resposta Letal (Porinas / GZIP Bomb)
+            logger.critical(f"NEMATOCISTO DISPARADO contra {client_ip}!")
+            # Registra forense em background
+            async def log_background():
+                loop = asyncio.get_running_loop()
+                await loop.run_in_executor(
+                    None, 
+                    persistence.registrar_forense,
+                    "NEMATOCISTO_OSMOTICO",
+                    f"IP: {client_ip} | Pressão: {defense_verdict['pressure']} atm | Buffer: {defense_verdict['buffer_size']}"
+                )
+            asyncio.create_task(log_background())
+            
+            async def toxin_stream():
+                toxin_path = defense_verdict["toxin_path"]
+                if os.path.exists(toxin_path):
+                    with open(toxin_path, "rb") as f:
+                        while True:
+                            chunk = f.read(1024 * 64) 
+                            if not chunk: break
+                            yield chunk
+                else:
                     while True:
-                        chunk = f.read(1024 * 64) # 64KB chunks
-                        if not chunk: break
-                        yield chunk
-                        # Loop infinito se quiser ser cruel: f.seek(0)
-            else:
-                # Fallback se não houver toxina gerada: Loop de zeros
-                while True:
-                    yield b'\0' * 1024
-                    await asyncio.sleep(0.01)
+                        yield b'\0' * 1024
+                        await asyncio.sleep(0.01)
 
-        return StreamingResponse(
-            toxin_stream(), 
-            media_type="application/gzip",
-            headers={"Content-Encoding": "gzip"}
-        )
+            return StreamingResponse(
+                toxin_stream(), 
+                media_type="application/gzip",
+                headers={"Content-Encoding": "gzip"}
+            )
+
+    # --- AUTENTICAÇÃO ---
+    token = request.headers.get("X-JELLY-DNA")
+    if token != JELLY_DNA_SECRET:
+        return JSONResponse(status_code=401, content={"erro": "REJEIÇÃO_IMUNOLÓGICA"})
 
     return await call_next(request)
 
