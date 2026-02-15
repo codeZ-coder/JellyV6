@@ -9,7 +9,8 @@ import signal
 import os
 import logging
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+import asyncio
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -17,6 +18,7 @@ from .rhopalium import Rhopalium
 from .statocyst import Statocyst
 from .cnidocyte import Cnidocyte
 from .persistence import Persistence
+from .membrane import OsmoticMembrane
 
 # --- LOGGING ESTRUTURADO ---
 logging.basicConfig(
@@ -41,6 +43,7 @@ balance = Statocyst(
     max_down_kbps=persistence.carregar_memoria("max_down_kbps", 5000.0)
 )
 defense = Cnidocyte(persistence=persistence)
+membrane = OsmoticMembrane()
 
 logger.info(f"Memória Carregada: Recorde de Rede = {balance.max_down_kbps/1024:.1f} MB/s")
 
@@ -66,6 +69,10 @@ class Vitals(BaseModel):
     stress_score: float
     cor_body: str
     cor_tentacles: str
+    # Mesoglea (Fase 4)
+    mesoglea_pressure: float = 0.0
+    mesoglea_max: float = 100.0
+    mesoglea_state: str = "PERMEAVEL"
 
 
 # --- MIDDLEWARE (Sistema Imunológico) ---
@@ -77,6 +84,61 @@ async def sistema_imunologico(request: Request, call_next):
     token = request.headers.get("X-JELLY-DNA")
     if token != JELLY_DNA_SECRET:
         return JSONResponse(status_code=401, content={"erro": "REJEIÇÃO_IMUNOLÓGICA"})
+    
+    # --- ANÁLISE OSMÓTICA (FASE 4) ---
+    jelly_type = request.headers.get("X-JELLY-TYPE", "FOREIGN")
+    
+    # Células do próprio corpo (Frontend) são ignoradas pela defesa
+    if jelly_type == "SOMATIC":
+        return await call_next(request)
+
+    client_ip = request.client.host
+    url = str(request.url)
+    ua = request.headers.get("user-agent", "")
+    
+    defense_verdict = membrane.process_request(client_ip, url, ua)
+    action = defense_verdict["action"]
+    
+    if action == "CONTRACT":
+        # Rate Limiting / Tarpit leve (Contração Muscular)
+        logger.warning(f"Contração Muscular: Atrasando {client_ip} (Pressão: {defense_verdict['pressure']} atm)")
+        await asyncio.sleep(2.0) # Delay artificial
+        
+    elif action == "NEMATOCYST":
+        # Resposta Letal (Porinas / GZIP Bomb)
+        logger.critical(f"NEMATOCISTO DISPARADO contra {client_ip}!")
+        # Registra no banco forense (persistência permanente) de forma ASSÍNCRONA e NON-BLOCKING (Fire-and-Forget)
+        async def log_background():
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(
+                None, 
+                persistence.registrar_forense,
+                "NEMATOCISTO_OSMOTICO",
+                f"IP: {client_ip} | Pressão: {defense_verdict['pressure']} atm | Buffer: {defense_verdict['buffer_size']}"
+            )
+        asyncio.create_task(log_background())
+        
+        async def toxin_stream():
+            toxin_path = defense_verdict["toxin_path"]
+            if os.path.exists(toxin_path):
+                with open(toxin_path, "rb") as f:
+                    while True:
+                        chunk = f.read(1024 * 64) # 64KB chunks
+                        if not chunk: break
+                        yield chunk
+                        # Loop infinito se quiser ser cruel: f.seek(0)
+            else:
+                # Fallback se não houver toxina gerada: Loop de zeros
+                while True:
+                    yield b'\0' * 1024
+                    await asyncio.sleep(0.01)
+
+        return StreamingResponse(
+            toxin_stream(), 
+            media_type="application/gzip",
+            headers={"Content-Encoding": "gzip"}
+        )
+
     return await call_next(request)
 
 
@@ -189,6 +251,18 @@ def get_vitals():
         down, up
     )
 
+    # 4. Estado da Mesoglea (pressão osmótica agregada)
+    total_pressure = sum(membrane.pressure_map.values())
+    max_pressure = membrane.threshold
+    if total_pressure > max_pressure * 2:
+        meso_state = "RUPTURA"
+    elif total_pressure > max_pressure:
+        meso_state = "INCHADA"
+    elif total_pressure > max_pressure * 0.3:
+        meso_state = "TENSIONADA"
+    else:
+        meso_state = "PERMEAVEL"
+
     return Vitals(
         cpu=cpu, ram=ram, disk_percent=disk,
         stress_score=result["stress_final"],
@@ -198,7 +272,25 @@ def get_vitals():
         defense_mode=result["reflexo_ativo"],
         cor_body=result["cor_body"],
         cor_tentacles=result["cor_tentacles"],
+        mesoglea_pressure=round(total_pressure, 1),
+        mesoglea_max=max_pressure,
+        mesoglea_state=meso_state,
     )
+
+
+@app.get("/osmotic")
+def get_osmotic_status():
+    """Diagnóstico detalhado da Membrana Osmótica"""
+    ips_under_pressure = {
+        ip: {"pressure": p, "state": "CRITICAL" if p > membrane.threshold else "STRESSED" if p > 30 else "NORMAL"}
+        for ip, p in membrane.pressure_map.items() if p > 0
+    }
+    return {
+        "threshold": membrane.threshold,
+        "total_pressure": round(sum(membrane.pressure_map.values()), 1),
+        "active_ips": len(ips_under_pressure),
+        "ips": ips_under_pressure
+    }
 
 
 if __name__ == "__main__":

@@ -5,3 +5,5 @@ fastapi
 uvicorn
 python-dotenv
 pytest
+fake-useragent
+pytest-asyncio

@@ -46,26 +46,23 @@ class Persistence:
     def salvar_memoria(self, key: str, value: float):
         """Persiste um valor na memória neural"""
         try:
-            conn = sqlite3.connect(self.db_name)
-            conn.execute("INSERT OR REPLACE INTO neuro_memory VALUES (?, ?)", (key, value))
-            conn.commit()
-            conn.close()
+            with sqlite3.connect(self.db_name) as conn:
+                conn.execute("INSERT OR REPLACE INTO neuro_memory VALUES (?, ?)", (key, value))
         except Exception as e:
             logger.error(f"Erro Memória: {e}")
 
     def carregar_memoria(self, key: str, default: float) -> float:
         """Carrega um valor da memória neural"""
         try:
-            conn = sqlite3.connect(self.db_name)
-            cursor = conn.execute("SELECT value FROM neuro_memory WHERE key=?", (key,))
-            row = cursor.fetchone()
-            conn.close()
-            return row[0] if row else default
+            with sqlite3.connect(self.db_name) as conn:
+                cursor = conn.execute("SELECT value FROM neuro_memory WHERE key=?", (key,))
+                row = cursor.fetchone()
+                return row[0] if row else default
         except Exception as e:
             logger.error(f"Erro ao carregar memória: {e}")
             return default
 
-    def registrar_evento_forense(self, trigger: str, details: str):
+    def registrar_forense(self, trigger: str, details: str):
         """
         Captura conexões de rede (ss -tunap) e salva no banco.
         Deve ser chamado em thread separada para não bloquear a API.
@@ -77,23 +74,16 @@ class Persistence:
             )
             snapshot = result.stdout
 
-            conn = sqlite3.connect(self.db_name)
-            conn.execute(
-                "INSERT INTO forensic_events VALUES (?, ?, ?, ?)",
-                (time.time(), trigger, details, snapshot)
-            )
-            conn.commit()
-            conn.close()
+            with sqlite3.connect(self.db_name) as conn:
+                conn.execute(
+                    "INSERT INTO forensic_events VALUES (?, ?, ?, ?)",
+                    (time.time(), trigger, details, snapshot)
+                )
             logger.warning(f"FORENSE REGISTRADA: {trigger}")
         except Exception as e:
             logger.error(f"Erro Forense: {e}")
 
-    def registrar_forense_async(self, trigger: str, details: str):
-        """Dispara registro forense em thread separada (não bloqueia)"""
-        threading.Thread(
-            target=self.registrar_evento_forense,
-            args=(trigger, details)
-        ).start()
+
 
     def salvar_vitals(self, t: float, cpu: float, ram: float,
                       disk: float, score: float, z_val: float,
@@ -101,14 +91,11 @@ class Persistence:
         """Persistência rotineira (a cada 60s)"""
         if t - self.last_save > 60:
             try:
-                conn = sqlite3.connect(self.db_name)
-                c = conn.cursor()
-                c.execute(
-                    "INSERT INTO vitals_history VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    (t, cpu, ram, disk, score, z_val, down, up)
-                )
-                conn.commit()
-                conn.close()
+                with sqlite3.connect(self.db_name) as conn:
+                    conn.execute(
+                        "INSERT INTO vitals_history VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (t, cpu, ram, disk, score, z_val, down, up)
+                    )
                 self.last_save = t
                 logger.info(f"Memória: Stress={score:.1f} | Rede Z={z_val:.1f}")
             except Exception as e:

@@ -21,7 +21,6 @@
 - [Taxonomia Digital](#-classificação-científica--taxonomia-digital)
 - [Arquitetura (NerveNet)](#️-arquitetura-nervenet)
 - [Bioluminescência (Status)](#-bioluminescência-system-status)
-- [Mecanismos de Defesa](#️-mecanismos-de-defesa--metabolismo)
 - [Instalação (Quick Start)](#-quick-start)
 - [Segurança & Ética](#-segurança-e-uso-responsável)
 - [Roadmap](#-roadmap-evolutivo)
@@ -55,13 +54,24 @@ graph LR
     N -->|HTTP /vitals| I[Interface<br/>Streamlit]
 ```
 
-> 📄 Documentação completa da arquitetura: [ARCHITECTURE.md](ARCHITECTURE.md)
+### 🧠 Anatomia do Sistema (Módulos)
+
+| Módulo | Arquivo | Responsabilidade |
+| :--- | :--- | :--- |
+| **NerveNet** | `core/nervenet.py` | Orquestrador: API FastAPI + Endpoints |
+| **Rhopalium** | `core/rhopalium.py` | Sentidos: Coleta de métricas do OS (psutil) |
+| **Statocyst** | `core/statocyst.py` | Equilíbrio: Cálculo de Z-Score e Stress |
+| **Cnidocyte** | `core/cnidocyte.py` | Defesa: Mecanismo de resposta e forense |
+| **Persistence** | `core/persistence.py` | Memória: Banco de dados SQLite (WAL Mode) |
+| **Interface** | `interface/app.py` | Corpo: Dashboard interativo em Streamlit |
+
+Example docs: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
 ## 🔵 Bioluminescência (System Status)
 
-O sistema comunica seu estado de saúde (Health Check) através de padrões de cores inspirados na *Cyanea capillata*:
+O sistema comunica seu estado de saúde (Health Check) através de padrões de cores:
 
 | Componente | 🟢 Homeostase (Normal) | 🟡 Alerta (Stress) | 🔴 Pânico (Crítico) |
 | :--- | :---: | :---: | :---: |
@@ -70,20 +80,7 @@ O sistema comunica seu estado de saúde (Health Check) através de padrões de c
 
 ---
 
-## 🛡️ Mecanismos de Defesa & Metabolismo
-
-Explicação dos conceitos biológicos adaptados para o sistema:
-
-| Conceito Biológico | Implementação Técnica | Função |
-| :--- | :--- | :--- |
-| **Homeostase** | Adaptive Stress Scoring | Aprende o "novo normal" do ambiente |
-| **Arco Reflexo** | Gatilhos Absolutos | CPU > 90% aciona modo pânico imediato |
-| **Nematocisto** | Forensic Logging | Captura evidências no momento exato da anomalia |
-| **DNA** | Auth Header | Token `X-JELLY-DNA` único para autenticação entre módulos |
-
----
-
-## 🚀 Quick Start
+## � Quick Start
 
 ### 1. Configuração do DNA (.env)
 ⚠️ **Nunca comite suas chaves reais.** Crie um arquivo `.env` baseado no exemplo abaixo:
@@ -139,7 +136,7 @@ python scripts/predator.py
 
 ---
 
-## 🔒 Segurança e Uso Responsável
+## � Segurança e Uso Responsável
 
 ### 🛡️ Boas Práticas
 *   Mantenha o arquivo `.env` no seu `.gitignore`.
