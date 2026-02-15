@@ -253,6 +253,9 @@ def get_vitals():
     )
 
     # 4. Estado da Mesoglea (pressão osmótica agregada)
+    # Metabolismo Basal: Decai pressão de IPs inativos
+    membrane.passive_recovery()
+    
     total_pressure = sum(membrane.pressure_map.values())
     max_pressure = membrane.threshold
     if total_pressure > max_pressure * 2:

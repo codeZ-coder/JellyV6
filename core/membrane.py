@@ -52,15 +52,28 @@ class OsmoticMembrane:
         if delta > 1.0:
             recovery = int(delta) * self.decay_rate
             current_pressure = self.pressure_map.get(ip, 0)
-            self.pressure_map[ip] = max(0, current_pressure - recovery)
+            new_pressure = max(0, current_pressure - recovery)
+            self.pressure_map[ip] = new_pressure
             
             # Limpa IPs que voltaram a zero (garbage collection)
-            if self.pressure_map[ip] == 0:
+            if new_pressure == 0:
                 self.pressure_map.pop(ip, None)
                 self.last_update_map.pop(ip, None)
                 return
             
             self.last_update_map[ip] = now
+
+    def passive_recovery(self):
+        """
+        Metabolismo Basal: Decai a pressão de TODOS os IPs.
+        Chamado periodicamente pelo sistema (ex: get_vitals) para limpar
+        pressão residual de atacantes que pararam de enviar requests.
+        """
+        with self._lock:
+            now = time.time()
+            # Copia chaves para permitir modificação durante iteração
+            for ip in list(self.pressure_map.keys()):
+                self._osmotic_recovery(ip)
 
     def _purge_expired(self):
         """Remove requests expirados do buffer (TTL). Deve ser chamado dentro do lock."""
