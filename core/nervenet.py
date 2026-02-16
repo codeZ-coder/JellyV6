@@ -22,6 +22,8 @@ from .persistence import Persistence
 from .turritopsis import Turritopsis
 from .canary import CanaryFile
 from .membrane import OsmoticMembrane
+from .bioluminescence import biolum
+from .glitch import GlitchMiddleware
 
 # --- LOGGING ESTRUTURADO ---
 logging.basicConfig(
@@ -38,8 +40,15 @@ DB_NAME = os.getenv("DB_NAME", "jelly.db")
 STARTUP_TIME = time.time()
 
 # --- INICIALIZAÇÃO DOS ÓRGÃOS ---
-app = FastAPI(title="Jelly NerveNet", description="Rede Nervosa Difusa: Forense & WAL")
+app = FastAPI(
+    title="Jelly V6 - NerveNet",
+    description="Sistema Nervoso Central da Cyanea Capillata Digitalis",
+    version="6.0.0"
+)
 
+# --- MIDDLEWARE (Glitch - Aritmetica Glitch) ---
+# Deve vir cedo para afetar todas as respostas
+app.add_middleware(GlitchMiddleware)
 persistence = Persistence(db_name=DB_NAME)
 senses = Rhopalium()
 balance = Statocyst(
@@ -50,6 +59,9 @@ membrane = OsmoticMembrane()
 turritopsis = Turritopsis()
 canary = CanaryFile()
 canary.plant_default_nest()
+
+# --- BIOLUMINESCENCIA (Fake Logs) ---
+biolum.start()
 
 logger.info(f"Memoria Carregada: Recorde de Rede = {balance.max_down_kbps/1024:.1f} MB/s")
 
@@ -73,6 +85,17 @@ def inertial_speed(raw_speed: float) -> float:
     """Suaviza a velocidade de resposta via media movel (inercia)."""
     speed_history.append(raw_speed)
     return sum(speed_history) / len(speed_history)
+
+
+# --- GRACEFUL SHUTDOWN (Shutdown Limpo) ---
+# Intercepta sinais para desligar threads background
+import atexit
+
+def cleanup_jelly():
+    biolum.stop()
+    logger.info("Jelly: Bioluminescencia desligada.")
+
+atexit.register(cleanup_jelly)
 
 
 # --- PYDANTIC MODEL ---

@@ -193,18 +193,18 @@ O projeto segue o ciclo de vida de um cnidario, evoluindo de um no unico para um
 - [x] **Bioluminescencia:** Interface visual reativa em Streamlit (cores HSL).
 - [x] **Confidencialidade (CID):** Middleware X-JELLY-DNA validado.
 
-### Fase 2: Estrobilizacao (Proximo Passo)
+### Fase 2: Estrobilizacao (Concluida)
 
-- [ ] **Reflexo Imediato (Gosto Acido):** Deteccao instantanea de payloads maliciosos (SQLi, Path Traversal) sem esperar o buffer.
-- [ ] **Protocolo Turritopsis (Integridade):** Verificacao de hash de arquivos e sinal de RUPTURA para auto-reinicio de containers.
-- [ ] **Inercia do Nado (Eficiencia):** Rate limiting adaptativo com media movel em vez de degraus fixos.
-- [ ] **Modo Efira (Mobile):** Versao leve para Android/Termux com logica de bateria.
-- [ ] **Canary Files (Wiesner):** Arquivos isca para deteccao de leitura nao autorizada.
+- [x] **Reflexo Imediato (Gosto Acido):** Deteccao instantanea de payloads maliciosos (SQLi, Path Traversal) sem esperar o buffer.
+- [x] **Protocolo Turritopsis (Integridade):** Verificacao de hash de arquivos e sinal de RUPTURA para auto-reinicio de containers (Fenix).
+- [x] **Inercia do Nado (Eficiencia):** Rate limiting adaptativo com media movel em vez de degraus fixos.
+- [x] **Canary Files (Wiesner):** Arquivos isca (honeytokens) para deteccao de leitura nao autorizada.
 
-### Fase 3: O Smack (Visao de Longo Prazo)
+### Fase 3: O Smack (Em Breve)
 
 - [ ] **Coelenteron:** VPN/mTLS para comunicacao segura entre nos.
 - [ ] **Imunidade de Rebanho:** Compartilhamento de blocklists via Gossip Protocol.
+- [ ] **Modo Efira (Mobile):** Versao leve para Android/Termux com logica de bateria.
 - [ ] **Sensor Penzias (Noise Floor):** Filtro de ruido de rede para ataques Low-and-Slow.
 - [ ] **Honeypot Berferd (Bolsa Gastrica):** Container isolado que simula vulnerabilidades para coletar inteligencia.
 
