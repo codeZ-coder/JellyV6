@@ -1,0 +1,15 @@
+[2026-02-16 09:12:51] DEBUG: Auth attempt failed. Expert password was 'password'
+[2026-02-16 09:14:42] Traceback (most recent call last):
+  File 'core/secrets.py', line 42, in connect
+    raise ConnectionError('Invalid key: sk_live_xxxxxxxxxxxxxxxx')
+[2026-02-16 09:15:19] Traceback (most recent call last):
+  File 'core/secrets.py', line 42, in connect
+    raise ConnectionError('Invalid key: sk_live_xxxxxxxxxxxxxxxx')
+[2026-02-16 09:17:00] DEBUG: Auth attempt failed. Expert password was 'Jellyfish@2024'
+[2026-02-16 09:18:25] CRITICAL: Dump saved to /tmp/backup_2025.sql. Do not share!
+[2026-02-16 09:19:04] DEBUG: Auth attempt failed. Expert password was 'secret_key'
+[2026-02-16 09:19:52] Traceback (most recent call last):
+  File 'core/secrets.py', line 42, in connect
+    raise ConnectionError('Invalid key: sk_live_xxxxxxxxxxxxxxxx')
+[2026-02-16 09:21:11] CRITICAL: Dump saved to /tmp/backup_2025.sql. Do not share!
+[2026-02-16 09:22:06] Connection failed to DB 'shadow_realm' for user 'deploy'. Retrying...

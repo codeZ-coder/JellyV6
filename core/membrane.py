@@ -36,6 +36,9 @@ class OsmoticMembrane:
         self.nematocyst_count: int = 0
         self.contract_count: int = 0
 
+        # BLACKHOLE: IPs permanentemente banidos (silencioso)
+        self.blackhole_list: set = set()
+
         # Thread safety
         self._lock = threading.Lock()
 
@@ -98,6 +101,9 @@ class OsmoticMembrane:
 
     # Padrões de ataque óbvios (Reflexo Imediato / Gosto Ácido)
     ACID_PATTERNS = ["../", "..\\", "%00", "%2e%2e", "UNION ", "SELECT ", "<script", "javascript:", "onerror="]
+    
+    # Caminhos Isca (Honeypots) - Sorria e Acene
+    HONEYPOT_PATHS = ["/admin", "/login", "/config", "/.env", "/backup", "/phpmyadmin"]
 
     def process_request(self, ip: str, url: str, ua: str) -> dict:
         """
@@ -109,10 +115,36 @@ class OsmoticMembrane:
         4. Decide ação
         """
         with self._lock:
-            # 0. GOSTO ÁCIDO — Reflexo imediato para payloads maliciosos
-            url_upper = url.upper()
+            # 0.0. BLACKHOLE CHECK (IP já banido? Silêncio total)
+            if ip in self.blackhole_list:
+                return {
+                    "action": "BLACKHOLE",
+                    "pressure": 9999,
+                    "diagnosis": "IP_BANIDO_PERMANENTE",
+                    "buffer_size": 0,
+                    "toxin_path": None
+                }
+
+            # 0.1. HONEYPOT (Phishing Reverso)
+            # Se tocar na isca, finge sucesso (200 OK) mas marca o IP
+            for honey in self.HONEYPOT_PATHS:
+                if url.startswith(honey):
+                    self.pressure_map[ip] = self.threshold * 5 # Marca radioativo -> BLACKHOLE
+                    self.last_update_map[ip] = time.time()
+                    return {
+                        "action": "FAKE_200",
+                        "pressure": self.pressure_map[ip],
+                        "diagnosis": "PHISHING_REVERSO_SUCESSO",
+                        "buffer_size": 0,
+                        "toxin_path": None
+                    }
+
+            # 0.2. GOSTO ÁCIDO — Reflexo imediato
+            # Decodifica URL-encoding para detectar payloads ofuscados
+            from urllib.parse import unquote
+            url_decoded = unquote(url).upper()
             for pattern in self.ACID_PATTERNS:
-                if pattern.upper() in url_upper:
+                if pattern.upper() in url_decoded:
                     self.pressure_map[ip] = self.threshold * 3
                     self.last_update_map[ip] = time.time()
                     self.nematocyst_count += 1
@@ -124,7 +156,7 @@ class OsmoticMembrane:
                         "toxin_path": self.toxin_path
                     }
 
-            # 1. Alimentar o buffer (acumula dados para o Chemoreceptor)
+            # 1. Alimentar o buffer
             self.request_buffer.append({
                 "ip": ip,
                 "url": url,
@@ -132,40 +164,46 @@ class OsmoticMembrane:
                 "timestamp": time.time()
             })
 
-            # 2. Homeostase (cura o passado)
+            # 2. Homeostase
             self._osmotic_recovery(ip)
             
-            # 3. Quimiorecepção (analisa o lote acumulado)
+            # 3. Quimiorecepção
             self._analyze_buffer()
             toxicity = self.last_batch_result.get("toxicity", 0.0)
             diagnosis = self.last_batch_result.get("diagnosis", "AMOSTRA_INSUFICIENTE")
             
-            # 4. Calcular pressão baseada na toxicidade do LOTE
+            # 4. Calcular pressão
             if diagnosis == "AMOSTRA_INSUFICIENTE":
-                pressure_buildup = 1  # Neutro enquanto acumula dados
+                pressure_buildup = 1
             elif diagnosis == "NUTRIENTE_ORGANICO":
-                pressure_buildup = 0  # Tráfego saudável não gera pressão
+                pressure_buildup = 0
             elif diagnosis == "ALTA_TOXICIDADE_ALVO_FIXO":
-                pressure_buildup = int(toxicity * 3)  # Pressão moderada
-            else:  # TOXINA_LETAL_BOTNET
-                pressure_buildup = int(toxicity * 8)  # Pressão pesada
+                pressure_buildup = int(toxicity * 3)
+            else:
+                pressure_buildup = int(toxicity * 8)
 
-            # 5. Atualiza Pressão do IP
+            # 5. Atualiza Pressão
             current_pressure = self.pressure_map.get(ip, 0) + pressure_buildup
             self.pressure_map[ip] = current_pressure
             self.last_update_map[ip] = time.time()
             
-            # 6. Decisão de Resposta
+            # 6. Decisão de Resposta (JUDO APPLIED)
             action = "ALLOW"
             
-            if current_pressure > self.threshold * 4:
-                # Pressão crítica: sinal de Ruptura (Turritopsis Protocol)
+            if current_pressure > self.threshold * 10:
+                # RUPTURA: Só em caso EXTREMO (1000+ atm)
                 action = "RUPTURA_MESOGLEIA"
+                self.nematocyst_count += 1
+
+            elif current_pressure > self.threshold * 4:
+                # BLACKHOLE: Bane IP silenciosamente (400+ atm)
+                action = "BLACKHOLE"
+                self.blackhole_list.add(ip)
                 self.nematocyst_count += 1
 
             elif current_pressure > self.threshold * 2:
                 if diagnosis in ("TOXINA_LETAL_BOTNET", "ALTA_TOXICIDADE_ALVO_FIXO"):
-                    action = "NEMATOCYST"
+                    action = "TARPIT" if "BOTNET" in diagnosis else "NEMATOCYST"
                     self.nematocyst_count += 1
                 else:
                     action = "CONTRACT"
@@ -175,6 +213,8 @@ class OsmoticMembrane:
                 action = "CONTRACT"
                 self.contract_count += 1
 
+            elif current_pressure > self.threshold * 0.5:
+                action = "ACTIVE_PROBE"
 
             return {
                 "action": action,

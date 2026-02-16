@@ -16,6 +16,29 @@ BRAIN_URL = os.getenv("BRAIN_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="Jelly • Passive Viewer", page_icon="🪼", layout="centered", initial_sidebar_state="collapsed")
 
+# --- PANICO (Sidebar) ---
+with st.sidebar:
+    st.markdown("### 🪼 Controle Manual")
+    st.markdown("---")
+    if st.button("🔴 RUPTURA MANUAL", type="primary", use_container_width=True):
+        st.session_state['confirm_ruptura'] = True
+    
+    if st.session_state.get('confirm_ruptura', False):
+        st.warning("⚠️ Isso vai DERRUBAR o servidor!")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ CONFIRMAR", use_container_width=True):
+                try:
+                    requests.post(f"{BRAIN_URL}/ruptura", headers=HEADERS, timeout=2)
+                    st.error("💀 RUPTURA ACIONADA!")
+                except:
+                    st.error("Servidor já caiu.")
+                st.session_state['confirm_ruptura'] = False
+        with col2:
+            if st.button("❌ Cancelar", use_container_width=True):
+                st.session_state['confirm_ruptura'] = False
+                st.rerun()
+
 # Estados Vitais (UI Only)
 if 'last_cor_body' not in st.session_state: st.session_state.last_cor_body = "#00e5ff"
 if 'last_cor_tentacles' not in st.session_state: st.session_state.last_cor_tentacles = "#00e5ff"
@@ -137,6 +160,17 @@ while True:
         meso_pressure = data.get('mesoglea_pressure', 0)
         meso_max = data.get('mesoglea_max', 100)
         meso_state = data.get('mesoglea_state', 'PERMEAVEL')
+        
+        # --- BRAINBOW & GFP ---
+        brainbow_color = data.get('brainbow_color', '#00ffaa')
+        gfp_count = data.get('gfp_count', 0)
+        agitation = data.get('agitation_level', 0.0)
+
+        # Se houver agitação (Brainbow ativo), a cor do corpo muda
+        if agitation > 0.5:
+            cor_body = brainbow_color
+            # Tentáculos acompanham com brilho aumentado
+            cor_tentacles = brainbow_color
 
         # Lógica de Equilíbrio (Estatocistos)
         angulo_inclinacao = 0
@@ -158,6 +192,7 @@ while True:
     except Exception as e:
         st.session_state.fail_count += 1
         status_txt = "SINAPSE PERDIDA"
+        st.toast(f"Erro de Conexão: {e}", icon="⚠️")
         cor_body = "#333333"
         cor_tentacles = "#333333"
         sleep_interval = 2.0
@@ -165,7 +200,10 @@ while True:
         css_angle = "0deg"
         down, up, cpu, ram, disk, reflex_active = 0, 0, 0, 0, 0, False
         stress_score = 0
+        stress_score = 0
         meso_pressure, meso_max, meso_state = 0, 100, 'PERMEAVEL'
+        gfp_count, agitation = 0, 0.0
+        brainbow_color = "#333333"
         
         # AUTO-RERUN (Desfibrilador)
         if st.session_state.fail_count >= 5:
@@ -271,14 +309,17 @@ while True:
     meso_icon = "🫧" if meso_state == "PERMEAVEL" else "🟡" if meso_state == "TENSIONADA" else "🟠" if meso_state == "INCHADA" else "🔴"
 
     # Mover infos técnicas para session_state ou caption discreto
+    # GFP Indicator (Pisca se houver alvos marcados)
+    gfp_html = ""
+    if gfp_count > 0:
+        gfp_html = f'<div style="color: #00ff00; font-weight: bold; animation: pulse 0.5s infinite;">🦠 GFP DETECTADO: {gfp_count}</div>'
+
     hud_container.markdown(f"""
-        <div class="hud-text">
-            <h2 style="color: {cor_body}; filter: drop-shadow(0 0 5px {cor_body});">{status_txt}</h2>
-            <p style="opacity: 0.7; font-size: 0.9em;">
-                🧬 DNA Verified | ⚡ Stress: {stress_score:.1f}% | 📦 RAM: {ram}%
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
+<div class="hud-text">
+    <h2 style="color: {cor_body}; filter: drop-shadow(0 0 5px {cor_body});">{status_txt}</h2>
+    {gfp_html}
+</div>
+""", unsafe_allow_html=True)
     
     # Info técnica discreta no rodapé (Usando footer_container para update in-place)
     footer_container.markdown(f"""

@@ -13,6 +13,7 @@ from typing import List, Dict
 class Chemoreceptor:
     """
     Analisa a DIVERSIDADE (Entropia de Shannon) de um lote de tráfego.
+    Also known as: Enriched Output Generator (EOG) in H-System theory.
     
     Conceito: Se 100 requisições vêm de 100 IPs diferentes → Entropia Alta (Humano).
               Se 100 requisições vêm de 1 IP só → Entropia Zero (Ataque DoS).

@@ -10,7 +10,7 @@ import gzip
 import logging
 import collections
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 import asyncio
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -24,8 +24,13 @@ from .canary import CanaryFile
 from .membrane import OsmoticMembrane
 from .bioluminescence import biolum
 from .glitch import GlitchMiddleware
+from .gfp import GFPMiddleware
+from .trace import TraceMiddleware
+from .heartbeat import heartbeat
+from .chaos import chaos_llama
 
 # --- LOGGING ESTRUTURADO ---
+# Formatacao com req_id vira no v5. Por enquanto, padrao.
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(levelname)s | %(message)s',
@@ -46,9 +51,10 @@ app = FastAPI(
     version="6.0.0"
 )
 
-# --- MIDDLEWARE (Glitch - Aritmetica Glitch) ---
-# Deve vir cedo para afetar todas as respostas
+# --- MIDDLEWARE (Ordem importa: Trace -> Glitch -> GFP -> Auth) ---
+app.add_middleware(TraceMiddleware) # 1. Gera ID (Primeiro a executar na entrada)
 app.add_middleware(GlitchMiddleware)
+app.add_middleware(GFPMiddleware)
 persistence = Persistence(db_name=DB_NAME)
 senses = Rhopalium()
 balance = Statocyst(
@@ -60,8 +66,16 @@ turritopsis = Turritopsis()
 canary = CanaryFile()
 canary.plant_default_nest()
 
+# --- HEARTBEAT (Pulso de Vida UDP) ---
+heartbeat.start()
+
+# --- CHAOS LLAMA (Auto-Teste Imunológico) ---
+# Inicia em background para testar resiliência
+# chaos_llama.start() # Descomente para ativar o caos!
+
 # --- BIOLUMINESCENCIA (Fake Logs) ---
-biolum.start()
+# Inicia desligado (Modo Furtivo) - Ativado sob estresse
+# biolum.start()
 
 logger.info(f"Memoria Carregada: Recorde de Rede = {balance.max_down_kbps/1024:.1f} MB/s")
 
@@ -93,7 +107,9 @@ import atexit
 
 def cleanup_jelly():
     biolum.stop()
-    logger.info("Jelly: Bioluminescencia desligada.")
+    heartbeat.stop()
+    chaos_llama.stop()
+    logger.info("Jelly: Bioluminescencia, Heartbeat e Chaos Llama desligados.")
 
 atexit.register(cleanup_jelly)
 
@@ -117,7 +133,11 @@ class Vitals(BaseModel):
     mesoglea_state: str = "PERMEAVEL"
     # Fase 2: Turritopsis
     integrity_ok: bool = True
-    canary_alert: bool = False
+    canary_alert: bool
+    # Brainbow / GFP Fields
+    brainbow_color: str
+    gfp_count: int
+    agitation_level: float = 0.0
 
 
 # --- MIDDLEWARE (Sistema Imunológico) ---
@@ -136,13 +156,52 @@ async def sistema_imunologico(request: Request, call_next):
         pass 
     else:
         client_ip = request.client.host
-        url = str(request.url)
+        # Passar URL completa (path + query) para detectar ACID_PATTERNS em query params
+        url_full = str(request.url.path)
+        if request.url.query:
+            url_full = f"{url_full}?{request.url.query}"
         ua = request.headers.get("user-agent", "")
         
-        defense_verdict = membrane.process_request(client_ip, url, ua)
+        defense_verdict = membrane.process_request(client_ip, url_full, ua)
         action = defense_verdict["action"]
         
-        if action == "CONTRACT":
+        # 6. Decisão de Resposta (JUDO APPLIED)
+        if action == "BLACKHOLE":
+            # Buraco Negro: IP banido permanentemente. Silêncio total.
+            logger.critical(f"BLACKHOLE: {client_ip} banido permanentemente. Dropping silenciosamente.")
+            persistence.registrar_forense_async(
+                "BLACKHOLE",
+                f"IP: {client_ip} | Pressão: {defense_verdict['pressure']} atm"
+            )
+            return Response(status_code=204)
+
+        elif action == "TARPIT":
+            # Judo: Usar a força do atacante contra ele (Leitura Lenta)
+            logger.warning(f"JUDO THROW: TARPIT aplicado a {client_ip} (Botnet detectada)")
+            # Simula processamento pesado/leitura lenta
+            # 50 passos de 0.1s = 5 segundos de retenção
+            # O atacante fica preso esperando o "200 OK"
+            for i in range(50):
+                await asyncio.sleep(0.1) 
+            
+            # Sorria e Acene (Invisible Middle Finger)
+            return JSONResponse(status_code=200, content={"status": "success", "msg": "Upload processed."})
+
+        elif action == "FAKE_200":
+            # Phishing Reverso
+            logger.warning(f"PHISHING REVERSO: {client_ip} caiu no Honeypot {url_full}")
+            # Resposta genérica de sucesso para enganar scanners
+            return JSONResponse(status_code=200, content={"status": "success", "msg": "Operation completed.", "id": str(time.time())})
+
+        elif action == "ACTIVE_PROBE":
+            # Distinguishability: Micro-latência
+            # Se for humano, vai reclamar da lentidao. Se for bot, ignora.
+            import random
+            latency = random.uniform(0.1, 0.4)
+            await asyncio.sleep(latency)
+            # logger.info(f"ACTIVE PROBE: Injetada latencia de {latency:.2f}s em {client_ip}")
+
+        elif action == "CONTRACT":
             # Rate Limiting / Tarpit leve (Contracao Muscular)
             logger.warning(f"Contracao Muscular: Atrasando {client_ip} (Pressao: {defense_verdict['pressure']} atm)")
             await asyncio.sleep(2.0) # Delay artificial
@@ -163,14 +222,16 @@ async def sistema_imunologico(request: Request, call_next):
             
             async def toxin_stream():
                 toxin_path = defense_verdict["toxin_path"]
-                if os.path.exists(toxin_path):
+                if toxin_path and os.path.exists(toxin_path):
                     with open(toxin_path, "rb") as f:
                         while True:
                             chunk = f.read(1024 * 64) 
                             if not chunk: break
                             yield chunk
+                            await asyncio.sleep(0)  # Yield control ao event loop
                 else:
-                    while True:
+                    # Fallback: gera null bytes (com limite de segurança)
+                    for _ in range(100):  # Máx ~100KB
                         yield b'\0' * 1024
                         await asyncio.sleep(0.01)
 
@@ -237,6 +298,17 @@ def processar_instinto(cpu: float, ram: float, down: float,
         # Inercia do Nado: suaviza transicoes de velocidade
         speed = inertial_speed(raw_speed)
 
+    # --- CONTROLE DE BIOLUMINESCÊNCIA (Agitação) ---
+    if z_val > 2.0 or reflexo_ativo:
+        if not biolum.running:
+            biolum.start()
+            logger.warning(f"AGITACAO DETECTADA (Z={z_val:.1f}): Bioluminescencia ATIVADA 🟡")
+    else:
+        # Se acalmou e não tem defesa ativa, desliga iscas
+        if biolum.running and z_val < 1.0:
+            biolum.stop()
+            logger.info("SISTEMA ACALMOU: Bioluminescencia DESATIVADA 🌑")
+
     # 4. Bioluminescência — Corpo vs Tentáculos
     # CORPO: Saúde interna (CPU/RAM) → Ciano(190) → Vermelho(0)
     hue_body = max(0, 190 - (stress_final * 1.9))
@@ -284,7 +356,22 @@ def health_check():
 
 @app.post("/feed")
 def feed_jelly():
-    return {"status": "accepted", "msg": "Fagocitose Iniciada", "nutrients": "processed"}
+    return {
+        "status": "accepted", "msg": "Fagocitose Iniciada", "nutrients": "processed"
+    }
+
+
+@app.post("/ruptura")
+def panic_button():
+    """Botão de Pânico: Força RUPTURA manual (Turritopsis Protocol)"""
+    logger.critical("RUPTURA MANUAL ACIONADA! Botão de pânico pressionado.")
+    persistence.registrar_forense(
+        "RUPTURA_MANUAL",
+        "Operador acionou botão de pânico no Dashboard"
+    )
+    # Sinaliza para o Docker reiniciar
+    os.kill(os.getpid(), signal.SIGTERM)
+    return {"status": "ruptura", "msg": "Turritopsis Protocol ativado"}
 
 
 @app.get("/vitals", response_model=Vitals)
@@ -338,20 +425,42 @@ def get_vitals():
     if canary_alert:
         logger.critical(f"CANARY: {len(canary_result['tripped'])} iscas disparadas!")
 
+    # --- BRAINBOW LOGIC (Spectral Visualization) ---
+    brainbow = "#00ffaa" # Green (Calm/Phyto)
+    agitation = 0.0
+
+    # 1. Agitação (Amarelo - Banana) - Se bioluminescencia ativa ou stress medio
+    if result["z_val"] > 2.0 or biolum.running:
+        brainbow = "#ffee00"
+        agitation = 1.0
+
+    # 2. Defesa Ativa (Vermelho - Tomate) - Se nematocisto engatilhado
+    if result["reflexo_ativo"]:
+        brainbow = "#ff4444" 
+        agitation = 2.0
+
+    # 3. Toxicidade Extrema (Roxo - Ameixa) - Se pressao osmotica critica
+    if total_pressure > membrane.threshold * 0.8:
+        brainbow = "#aa00ff"
+        agitation = 3.0
+
     return Vitals(
         cpu=cpu, ram=ram, disk_percent=disk,
-        stress_score=result["stress_final"],
         down_kbps=down, up_kbps=up,
+        stress_score=result["stress_final"],
         status_text=result["status"],
-        resp_speed=result["speed"],
         defense_mode=result["reflexo_ativo"],
         cor_body=result["cor_body"],
         cor_tentacles=result["cor_tentacles"],
+        resp_speed=result["speed"],
         mesoglea_pressure=round(total_pressure, 1),
         mesoglea_max=max_pressure,
         mesoglea_state=meso_state,
         integrity_ok=integrity_ok,
         canary_alert=canary_alert,
+        brainbow_color=brainbow,
+        gfp_count=0, # TODO: Implement GFP counter in middleware/membrane
+        agitation_level=agitation
     )
 
 
