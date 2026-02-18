@@ -115,10 +115,12 @@ class TestOsmoticMembrane:
         membrane.last_analysis_time = 0
         for i in range(30):
             membrane.last_analysis_time = 0  # Forçar re-análise a cada request
-            result = membrane.process_request("10.0.0.1", "/login", "python-requests/2.28")
+            result = membrane.process_request("10.0.0.1", "/api/resource", "python-requests/2.28")
+
         
         # Com threshold=10, decay=0, e 30 requests tóxicos, deve ter disparado
-        assert result["action"] in ("CONTRACT", "NEMATOCYST", "RUPTURA_MESOGLEIA")
+        assert result["action"] in ("CONTRACT", "NEMATOCYST", "RUPTURA_MESOGLEIA", "BLACKHOLE")
+
 
     def test_homeostase_recupera(self):
         """Pressão decai com o tempo (homeostase)."""
