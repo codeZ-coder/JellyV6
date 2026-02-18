@@ -30,5 +30,8 @@ assets/toxin.gz
 # Canary Files (Iscas com credenciais falsas)
 canary_nest/
 
+#documentos
+docs/
+
 # Pytest
 .pytest_cache/
