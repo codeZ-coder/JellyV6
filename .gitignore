@@ -1,29 +1,37 @@
+# Ambientes Virtuais (O Oceano)
+jelly_env/
+jelly_venv/
+venv/
+env/
+.venv
+
+# Compilados Python (Lixo Celular)
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.env
-.venv
-env/
-venv/
-jelly.db
-jelly.db-shm
-jelly.db-wal
-.DS_Store
-# Ignorar o Ambiente Virtual (O Oceano)
-jelly_env/
-venv/
-env/
 
-# Ignorar arquivos compilados do Python (Lixo)
-__pycache__/
-*.pyc
-
-# Ignorar o Banco de Dados (Segurança e Peso)
+# Banco de Dados (Memória Sensível)
 *.db
-jelly.db
+*.db-shm
+*.db-wal
 *.sqlite3
 jelly_forensics.log
 
-# Ignorar chaves de API (Se criar um .env no futuro)
+# Chaves e Segredos (DNA)
 .env
+
+# Sistema
+.DS_Store
+
+# Payloads de Defesa (Gerados localmente)
+assets/toxin.gz
+
+# Canary Files (Iscas com credenciais falsas)
+canary_nest/
+
+#documentos
+docs/
+
+# Pytest
+.pytest_cache/
