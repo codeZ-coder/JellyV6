@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jelly · sistema adaptativo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --abyss: #080c0b;
+  --abyss-light: #101814;
+  --deep: #182420;
+  --bio: #9efff0;
+  --bio-dim: rgba(158,255,240,0.25);
+  --bio-faint: rgba(158,255,240,0.06);
+  --drift: #2e5549;
+  --foam: #cce8e1;
+  --border: rgba(158,255,240,0.1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+  background: var(--abyss);
+  color: var(--foam);
+  font-family: 'Space Mono', monospace;
+  overflow-x: hidden;
+}
+
+/* GRAIN */
+body::before {
+  content:'';
+  position:fixed;
+  inset:-50%;
+  width:200%; height:200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:0.022;
+  pointer-events:none;
+  z-index:9999;
+  animation:grain 0.9s steps(1) infinite;
+}
+@keyframes grain {
+  0%,100%{transform:translate(0,0)} 10%{transform:translate(-2%,-3%)}
+  20%{transform:translate(3%,2%)} 30%{transform:translate(-1%,4%)}
+  40%{transform:translate(4%,-1%)} 50%{transform:translate(-3%,3%)}
+  60%{transform:translate(2%,-4%)} 70%{transform:translate(-4%,1%)}
+  80%{transform:translate(1%,3%)} 90%{transform:translate(3%,-2%)}
+}
+
+/* VIGNETTE */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(8,12,11,0.7) 100%);
+  pointer-events:none;
+  z-index:1;
+}
+
+/* CANVAS */
+#bio-canvas {
+  position:fixed; top:0; left:0;
+  width:100%; height:100%;
+  z-index:0;
+  opacity:0.3;
+  pointer-events:none;
+}
+
+/* LAYOUT */
+.wrap {
+  position:relative; z-index:10;
+  max-width:960px;
+  margin:0 auto;
+  padding:0 32px;
+}
+
+/* NAV */
+nav {
+  position:fixed; top:0; left:0; right:0;
+  z-index:100;
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);
+  background:rgba(8,12,11,0.8);
+}
+.nav-inner {
+  max-width:960px; margin:0 auto;
+  padding:0 32px; height:52px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-logo {
+  font-family:'Syne',sans-serif;
+  font-size:16px; font-weight:800;
+  color:var(--bio); text-decoration:none;
+  letter-spacing:0.05em;
+  text-shadow:0 0 20px var(--bio-dim);
+}
+.nav-right {
+  display:flex; align-items:center; gap:10px;
+  font-size:11px; color:var(--bio-dim); letter-spacing:0.15em;
+}
+.pulse-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--bio);
+  box-shadow:0 0 8px var(--bio);
+  animation:pulse 3s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:1;transform:scale(1.3)} }
+
+/* HERO */
+.hero {
+  padding:140px 0 80px;
+  border-bottom:1px solid var(--border);
+  position:relative; overflow:hidden;
+  background-image:
+    linear-gradient(to right, rgba(8,12,11,0.97) 35%, rgba(8,12,11,0.8) 60%, rgba(8,12,11,0.55) 100%),
+    linear-gradient(to bottom, rgba(8,12,11,0.5) 0%, transparent 20%, transparent 80%, rgba(8,12,11,0.95) 100%),
+    url('jellywide.png');
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
+}
+.hero-pre {
+  font-size:11px; letter-spacing:0.3em;
+  color:var(--bio-dim); text-transform:uppercase;
+  margin-bottom:24px;
+  display:flex; align-items:center; gap:14px;
+}
+.hero-pre::before { content:''; display:block; width:28px; height:1px; background:var(--bio-dim); }
+
+.hero-title {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(64px,14vw,128px);
+  font-weight:800;
+  letter-spacing:-0.04em;
+  line-height:0.9;
+  color:var(--bio);
+  text-shadow:0 0 40px var(--bio-dim), 0 0 80px rgba(158,255,240,0.1);
+  margin-bottom:8px;
+}
+.hero-sub {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(18px,3vw,28px);
+  font-weight:700;
+  color:var(--drift);
+  letter-spacing:0.05em;
+  margin-bottom:40px;
+}
+
+.hero-quote {
+  border-left:2px solid var(--bio-dim);
+  padding-left:20px;
+  font-size:15px;
+  color:var(--bio);
+  opacity:0.8;
+  font-style:italic;
+  margin-bottom:48px;
+  max-width:500px;
+  line-height:1.8;
+}
+
+.hero-cta {
+  display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+}
+.btn-bio {
+  display:inline-flex; align-items:center; gap:10px;
+  background:var(--bio); color:var(--abyss);
+  font-family:'Space Mono',monospace;
+  font-size:12px; font-weight:700;
+  letter-spacing:0.1em; text-transform:uppercase;
+  text-decoration:none; padding:14px 28px;
+  transition:all 0.2s;
+}
+.btn-bio:hover { background:var(--foam); transform:translateY(-2px); box-shadow:0 8px 30px var(--bio-dim); }
+.btn-outline {
+  display:inline-flex; align-items:center; gap:8px;
+  border:1px solid var(--border); color:var(--bio-dim);
+  font-family:'Space Mono',monospace;
+  font-size:12px; letter-spacing:0.1em; text-transform:uppercase;
+  text-decoration:none; padding:14px 24px;
+  transition:all 0.2s;
+}
+.btn-outline:hover { border-color:var(--bio-dim); color:var(--bio); }
+
+/* TICKER */
+.ticker {
+  overflow:hidden; padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.ticker-track {
+  display:flex; gap:0; white-space:nowrap;
+  animation:tick 25s linear infinite;
+}
+.ticker-item {
+  font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--drift); padding:0 36px; flex-shrink:0;
+}
+@keyframes tick { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+/* SECTIONS */
+section { padding:80px 0; border-bottom:1px solid var(--border); }
+.sec-label {
+  font-size:10px; letter-spacing:0.3em; text-transform:uppercase;
+  color:var(--bio-dim); margin-bottom:48px;
+  display:flex; align-items:center; gap:16px;
+}
+.sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* MANIFESTO */
+.manifesto {
+  display:grid; grid-template-columns:1fr 1fr; gap:1px;
+  background:var(--border);
+}
+.manifesto-cell {
+  background:var(--abyss); padding:40px 36px;
+  transition:background 0.3s;
+}
+.manifesto-cell:hover { background:var(--deep); }
+.manifesto-cell p {
+  font-size:14px; line-height:1.9;
+  color:var(--foam); opacity:0.85;
+}
+.manifesto-cell p + p { margin-top:16px; }
+.manifesto-cell .glow { color:var(--bio); text-shadow:0 0 12px var(--bio-dim); }
+.manifesto-cell blockquote {
+  border-left:2px solid var(--bio);
+  padding-left:18px; margin-top:20px;
+  font-style:italic; font-size:15px;
+  color:var(--bio); opacity:0.9; line-height:1.7;
+}
+
+/* PRINCÍPIOS */
+.principles {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:1px; background:var(--border);
+}
+.principle {
+  background:var(--abyss); padding:36px 28px;
+  transition:background 0.3s;
+}
+.principle:hover { background:var(--deep); }
+.principle .sym {
+  font-size:22px; color:var(--bio-dim);
+  display:block; margin-bottom:16px;
+  transition:all 0.3s;
+}
+.principle:hover .sym { color:var(--bio); transform:scale(1.1); }
+.principle h3 {
+  font-family:'Syne',sans-serif; font-size:13px;
+  font-weight:700; color:var(--bio);
+  letter-spacing:0.2em; text-transform:uppercase;
+  margin-bottom:12px;
+}
+.principle p { font-size:13px; color:var(--foam); opacity:0.7; line-height:1.8; }
+
+/* STATUS */
+.status-block {
+  background:var(--abyss-light);
+  border:1px solid var(--border);
+  padding:36px;
+  font-size:14px; line-height:2.2;
+  color:var(--foam);
+}
+.status-block .on  { color:var(--bio); }
+.status-block .off { color:var(--drift); }
+.status-block pre {
+  font-family:'Space Mono',monospace;
+  background:transparent;
+  font-size:13px;
+}
+
+/* ROADMAP */
+.roadmap { display:flex; flex-direction:column; }
+.rm {
+  display:grid; grid-template-columns:140px 1fr 110px;
+  gap:24px; align-items:center;
+  padding:24px 0; border-bottom:1px solid var(--border);
+  transition:all 0.2s;
+}
+.rm:last-child { border-bottom:none; }
+.rm:hover .rm-name { color:var(--bio); }
+.rm-layer { font-size:11px; color:var(--bio-dim); letter-spacing:0.1em; }
+.rm-name { font-size:14px; color:var(--foam); transition:color 0.2s; }
+.rm-desc { font-size:11px; color:var(--drift); margin-top:3px; }
+.rm-bar { height:2px; background:var(--deep); }
+.rm-fill { height:100%; background:var(--bio); box-shadow:0 0 8px var(--bio-dim); }
+.rm-fill.dim { background:var(--drift); box-shadow:none; }
+.rm-fill.load { width:6% !important; animation:load 2s ease-in-out infinite; }
+@keyframes load { 0%,100%{opacity:0.2} 50%{opacity:0.8} }
+
+/* STATS */
+.stats {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:1px; background:var(--border);
+}
+.stat { background:var(--abyss); padding:40px 24px; text-align:center; transition:background 0.3s; }
+.stat:hover { background:var(--deep); }
+.stat .val {
+  font-family:'Syne',sans-serif; font-size:44px;
+  font-weight:800; color:var(--bio);
+  text-shadow:0 0 20px var(--bio-dim);
+  line-height:1; margin-bottom:8px;
+}
+.stat .lbl { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--bio-dim); }
+.stat .note { font-size:10px; color:var(--drift); margin-top:6px; }
+
+/* CTA FINAL */
+.cta-final {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:64px; align-items:center;
+}
+.cta-left h2 {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(28px,4vw,44px); font-weight:800;
+  color:var(--bio); letter-spacing:-0.02em; line-height:1.1;
+  margin-bottom:16px;
+  text-shadow:0 0 30px var(--bio-dim);
+}
+.cta-left p { font-size:13px; color:var(--foam); opacity:0.7; line-height:1.9; }
+.cta-links { display:flex; flex-direction:column; gap:1px; background:var(--border); }
+.cta-link {
+  background:var(--abyss);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 24px; text-decoration:none;
+  transition:background 0.2s;
+}
+.cta-link:hover { background:var(--deep); }
+.cta-link:hover .arr { transform:translate(3px,-3px); color:var(--bio); }
+.cta-link-label { font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--foam); opacity:0.8; }
+.arr { color:var(--bio-dim); transition:all 0.2s; font-size:18px; }
+
+/* FOOTER */
+footer {
+  padding:32px 0;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:12px;
+  font-size:11px; color:var(--bio-dim); letter-spacing:0.1em;
+}
+.footer-sig { color:var(--bio); animation:pulse 3s ease-in-out infinite; }
+
+/* REVEAL */
+.reveal { opacity:0; transform:translateY(20px); transition:opacity 0.7s ease,transform 0.7s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* RESPONSIVE */
+@media(max-width:640px) {
+  .manifesto { grid-template-columns:1fr; }
+  .principles { grid-template-columns:1fr; }
+  .stats { grid-template-columns:1fr 1fr; }
+  .cta-final { grid-template-columns:1fr; gap:36px; }
+  .rm { grid-template-columns:1fr; gap:6px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="bio-canvas"></canvas>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">Jelly</a>
+    <div class="nav-right">
+      <div class="pulse-dot"></div>
+      sistema adaptativo
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-pre reveal">agente de monitoramento · defesa cibernética leve · bio-inspirado</div>
+    <h1 class="hero-title reveal">JELLY</h1>
+    <div class="hero-sub reveal">98% água. 2% propósito.</div>
+    <div class="hero-quote reveal">
+      "Não construo para durar.<br>Construo para evoluir."
+    </div>
+    <div class="hero-cta reveal">
+      <a href="https://github.com/codeZ-coder" target="_blank" class="btn-bio">Ver no GitHub ↗</a>
+      <a href="#sobre" class="btn-outline">Sobre o projeto</a>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker">
+    <div class="ticker-track">
+      <span class="ticker-item">sistema adaptativo</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">em transição</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">em construção</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">em missão</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">98% água</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">fluxo contínuo</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">sem órgãos, só intenção</span>
+      <span class="ticker-item">/</span>
+      <!-- repeat -->
+      <span class="ticker-item">sistema adaptativo</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">em transição</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">em construção</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">em missão</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">98% água</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">fluxo contínuo</span>
+      <span class="ticker-item">/</span>
+      <span class="ticker-item">sem órgãos, só intenção</span>
+      <span class="ticker-item">/</span>
+    </div>
+  </div>
+
+  <!-- SOBRE -->
+  <section id="sobre">
+    <div class="sec-label reveal">Manifesto</div>
+    <div class="manifesto reveal">
+      <div class="manifesto-cell">
+        <p>
+          Uma água-viva é <span class="glow">98% água</span>. Sem cérebro, sem ossos, sem plano fixo.
+          Só o ambiente, a corrente e a resposta ao que encontra pelo caminho.
+        </p>
+        <p>
+          Jelly é um experimento com a mesma lógica — um sistema que aprende
+          com o que encontra, não com o que foi programado para esperar.
+        </p>
+        <blockquote>
+          "Não construo para durar.<br>Construo para evoluir."
+        </blockquote>
+      </div>
+      <div class="manifesto-cell">
+        <p>
+          Cada repositório aqui é uma célula tentando aprender a brilhar.
+          O processo é público porque o erro também ensina — especialmente
+          o erro de quem está começando do zero, aos 40+, sem manual.
+        </p>
+        <p>
+          Jelly não é um produto. É um <span class="glow">log de transição</span> —
+          o diário de um sistema que está se descobrindo em tempo real.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRINCÍPIOS -->
+  <section>
+    <div class="sec-label reveal">Princípios</div>
+    <div class="principles reveal">
+      <div class="principle">
+        <span class="sym">⌇</span>
+        <h3>Flutuar</h3>
+        <p>Não preciso saber tudo. Sinto o ambiente, me adapto, sigo. A corrente decide tanto quanto eu.</p>
+      </div>
+      <div class="principle">
+        <span class="sym">◈</span>
+        <h3>Brilhar</h3>
+        <p>Não para chamar atenção — para iluminar o caminho de quem vem depois. Aprendizado público é bioluminescência.</p>
+      </div>
+      <div class="principle">
+        <span class="sym">∞</span>
+        <h3>Pulsar</h3>
+        <p>Contrair, expandir, seguir. Sem órgãos, só intenção. O ritmo é o método.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATUS ATUAL -->
+  <section>
+    <div class="sec-label reveal">Status atual</div>
+    <div class="status-block reveal">
+      <pre>
+<span style="color:var(--bio-dim); font-size:11px; letter-spacing:0.2em;"># o projeto</span>
+<span class="on">[*]</span> agente de monitoramento e defesa cibernética leve
+<span class="on">[*]</span> roda em linux · wsl · python
+<span class="on">[*]</span> arquitetura modular definida
+<span class="on">[*]</span> módulos core escritos (nervenet, rhopalium, statocyst)
+<span class="on">[*]</span> detecção de anomalias via z-score
+<span class="off">[ ]</span> docker testado em produção
+<span class="off">[ ]</span> z-score calibrado de verdade
+<span class="off">[ ]</span> interface estável
+<span class="off">[ ]</span> pronto para o mundo
+
+<span style="color:var(--bio-dim); font-size:11px; letter-spacing:0.2em;"># o dev</span>
+<span class="on">[*]</span> aprendendo
+<span class="on">[*]</span> pulsando
+<span class="off">[ ]</span> com alguma ideia do que está fazendo
+      </pre>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <div class="sec-label reveal">Correnteza</div>
+    <div class="roadmap reveal">
+      <div class="rm">
+        <div class="rm-layer">camada 01</div>
+        <div>
+          <div class="rm-name">Fundamentos</div>
+          <div class="rm-desc">Lógica, Python, Algoritmos</div>
+        </div>
+        <div class="rm-bar"><div class="rm-fill" style="width:20%"></div></div>
+      </div>
+      <div class="rm">
+        <div class="rm-layer">camada 02</div>
+        <div>
+          <div class="rm-name">Dados</div>
+          <div class="rm-desc">SQL, Estruturas, Análise</div>
+        </div>
+        <div class="rm-bar"><div class="rm-fill" style="width:10%"></div></div>
+      </div>
+      <div class="rm">
+        <div class="rm-layer">camada 03</div>
+        <div>
+          <div class="rm-name">Segurança</div>
+          <div class="rm-desc">Cibersec, Redes, Pentest</div>
+        </div>
+        <div class="rm-bar"><div class="rm-fill dim" style="width:5%"></div></div>
+      </div>
+      <div class="rm">
+        <div class="rm-layer">camada 04</div>
+        <div>
+          <div class="rm-name">Automação</div>
+          <div class="rm-desc">Docker, Pipelines, DevSecOps</div>
+        </div>
+        <div class="rm-bar"><div class="rm-fill dim" style="width:2%"></div></div>
+      </div>
+      <div class="rm">
+        <div class="rm-layer">camada 05</div>
+        <div>
+          <div class="rm-name">Inteligência distribuída</div>
+          <div class="rm-desc">lá na frente — profundidade desconhecida</div>
+        </div>
+        <div class="rm-bar"><div class="rm-fill load"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section>
+    <div class="sec-label reveal">Composição</div>
+    <div class="stats reveal">
+      <div class="stat">
+        <div class="val">98%</div>
+        <div class="lbl">água</div>
+        <div class="note">o resto é fluxo</div>
+      </div>
+      <div class="stat">
+        <div class="val">~0</div>
+        <div class="lbl">anos de exp.</div>
+        <div class="note">oficial</div>
+      </div>
+      <div class="stat">
+        <div class="val">40+</div>
+        <div class="lbl">anos de vida</div>
+        <div class="note">braças de profundidade</div>
+      </div>
+      <div class="stat">
+        <div class="val">∞</div>
+        <div class="lbl">curiosidade</div>
+        <div class="note">sem fundo</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section style="border-bottom:none;">
+    <div class="cta-final reveal">
+      <div class="cta-left">
+        <h2>Vamos mergulhar?</h2>
+        <p>
+          Se você também está começando, gosta de aprender em público
+          ou quer trocar ideia sobre tecnologia, dados ou sistemas adaptativos —
+          pode chamar.
+        </p>
+      </div>
+      <div class="cta-links">
+        <a href="https://github.com/codeZ-coder" target="_blank" class="cta-link">
+          <span class="cta-link-label">GitHub</span>
+          <span class="arr">↗</span>
+        </a>
+        <a href="https://code-z.dev" target="_blank" class="cta-link">
+          <span class="cta-link-label">code-z.dev</span>
+          <span class="arr">↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="reveal">
+    <span>Jelly · codeZ-coder</span>
+    <span>sistema adaptativo em fluxo</span>
+    <span class="footer-sig">pulsando</span>
+  </footer>
+
+</div>
+
+<script>
+// BIOLUMINESCENT PARTICLES
+const canvas = document.getElementById('bio-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+const particles = Array.from({length:70}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  r: Math.random() * 1.8 + 0.5,
+  vy: Math.random() * 0.25 + 0.08,
+  vx: (Math.random() - 0.5) * 0.08,
+  phase: Math.random() * Math.PI * 2
+}));
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.y += p.vy; p.x += p.vx; p.phase += 0.015;
+    if (p.y > canvas.height) { p.y = 0; p.x = Math.random() * canvas.width; }
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    const op = 0.2 + Math.sin(p.phase) * 0.15;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(158,255,240,${op})`;
+    ctx.shadowColor = '#9efff0';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+
+// REVEAL
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80);
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
