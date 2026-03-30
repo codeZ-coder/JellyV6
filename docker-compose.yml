@@ -28,6 +28,7 @@ services:
       - "8501:8501"
     environment:
       - JELLY_DNA_SECRET=${JELLY_DNA_SECRET:-default_secret_dev}
+      - BRAIN_URL=http://brain:8000
     depends_on:
       brain:
         condition: service_healthy

@@ -18,19 +18,22 @@ class Statocyst:
 
     def __init__(self, max_down_kbps: float = 5000.0):
         self.cpu_history = deque(maxlen=60)
-        self.net_history = deque(maxlen=30)
+        self.short_term_net = deque(maxlen=10)   # Janela Curta (30s - "Agora")
+        self.long_term_net = deque(maxlen=1000)  # Janela Longa (1h - "Normal")
         self.max_down_kbps = max_down_kbps
 
     def analyze_network(self, novo_fluxo: float) -> tuple:
         """
-        Analisa tráfego de rede para anomalias.
-        Retorna (is_anomaly: bool, z_score_or_severity: float)
+        Analisa tráfego de rede para anomalias (Statocyst 2.0).
+        Retorna (is_anomaly: bool, z_score_or_severity: float, record_updated: bool)
         
-        Usa dois métodos:
-        1. Saturação absoluta (>80% do máximo histórico)
-        2. Z-Score estatístico (>3.0 desvios padrão)
+        Usa três métodos:
+        1. Saturação Absoluta (>80% do máximo histórico) - Pânico
+        2. Z-Score de Curto Prazo (Picos repentinos)
+        3. Desvio da Baseline (Mudança de Comportamento "Hoje vs Ontem")
         """
-        self.net_history.append(novo_fluxo)
+        self.short_term_net.append(novo_fluxo)
+        self.long_term_net.append(novo_fluxo)
 
         # 0. APRENDIZADO: atualiza recorde
         record_updated = False
@@ -43,21 +46,27 @@ class Statocyst:
         if novo_fluxo > limite_panico:
             return True, 100.0, record_updated
 
-        # 2. Z-SCORE (Estatístico)
-        if len(self.net_history) < 10:
+        # Se não tem histórico suficiente, assume normal
+        if len(self.long_term_net) < 20:
             return False, 0.0, record_updated
 
-        media = statistics.mean(self.net_history)
-        desvio = statistics.stdev(self.net_history)
-        if desvio < 50:
-            desvio = 50  # Fallback para evitar falsos positivos em rede morta
+        # Estatísticas da Baseline (Longo Prazo)
+        baseline_mean = statistics.mean(self.long_term_net)
+        baseline_std = statistics.stdev(self.long_term_net)
+        if baseline_std < 50: baseline_std = 50 # Evita div/0
 
-        z_score = (novo_fluxo - media) / desvio
+        # Estatísticas do Agora (Curto Prazo)
+        current_mean = statistics.mean(self.short_term_net)
 
-        if z_score > 3.0:
-            return True, z_score, record_updated
+        # 2. DETECÇÃO DE DESVIO (Anomalia de Comportamento)
+        # Compara a media de agora com a distribuicao de "sempre"
+        z_score_long = (current_mean - baseline_mean) / baseline_std
 
-        return False, z_score, record_updated
+        # Se o tráfego atual é > 3 sigmas da baseline
+        if z_score_long > 3.0:
+            return True, z_score_long, record_updated
+            
+        return False, z_score_long, record_updated
 
     def analyze_cpu_stress(self, cpu: float, ram: float) -> float:
         """

@@ -17,17 +17,38 @@ class Cnidocyte:
             persistence: instância de Persistence para registro forense
         """
         self.persistence = persistence
-        self.nematocisto_ativo = 0  # Cooldown counter (ciclos restantes)
+        self.nematocisto_ativo = 0  # Dwell Time Ativo (Contador de Defesa)
+        self.refractory_timer = 0   # Dwell Time Passivo (Periodo Refratario)
 
     def avaliar_ameaca(self, is_anomaly: bool, down: float,
-                       max_down_kbps: float, z_val: float) -> bool:
+                       max_down_kbps: float, z_val: float,
+                       osmotic_alert: str = None) -> bool:
         """
         Avalia se deve ativar defesa e gerencia cooldown.
         Retorna True se reflexo está ativo.
+        
+        Args:
+            osmotic_alert: Ação da membrana osmótica (NEMATOCYST, RUPTURA_MESOGLEIA, etc.)
         """
-        if is_anomaly and self.nematocisto_ativo == 0:
-            # Ativa defesa por 15 ciclos
+        # Conexão Mente-Corpo: alerta osmótico ativa defesa imediatamente
+        if osmotic_alert in ("NEMATOCYST", "RUPTURA_MESOGLEIA"):
             self.nematocisto_ativo = 15
+            self.refractory_timer = 0  # Defesa crítica ignora tempo de calma
+            self.persistence.registrar_forense_async(
+                "ALERTA_OSMOTICO",
+                f"Tipo: {osmotic_alert} | Flow: {down:.0f}"
+            )
+
+        elif is_anomaly and self.nematocisto_ativo == 0:
+            # DWELL TIME (Histerese): Se está em período refratário, ignora anomalias leves
+            if self.refractory_timer > 0:
+                logger.debug(f"HISTERESE: Ignorando anomalia durante periodo refratario ({self.refractory_timer}s)")
+                self.refractory_timer -= 1
+                return False
+
+            # Ativa defesa por 15 ciclos (Dwell Time Ativo)
+            self.nematocisto_ativo = 15
+            self.refractory_timer = 0
 
             # Determina tipo de ameaça e dispara forense em background
             limite_atual = max_down_kbps * 0.8
@@ -44,14 +65,19 @@ class Cnidocyte:
 
         elif is_anomaly and self.nematocisto_ativo > 0:
             # Já em defesa — apenas renova o cooldown
+            # Dwell Time Ativo: Garante que fique em defesa por mais tempo
             self.nematocisto_ativo = 15
-
-        # Decrementa cooldown
-        reflexo_ativo = self.nematocisto_ativo > 0
-        if reflexo_ativo:
+        
+        # Decrementa cooldown de ATIVIDADE
+        if self.nematocisto_ativo > 0:
             self.nematocisto_ativo -= 1
+            # Se acabou a defesa, inicia periodo refratario (Calm Dwell Time)
+            if self.nematocisto_ativo == 0:
+                self.refractory_timer = 10  # 10 ciclos de paz obrigatÃ³ria
 
+        reflexo_ativo = self.nematocisto_ativo > 0
         return reflexo_ativo
+
 
     def get_status_text(self, reflexo_ativo: bool, down: float,
                         max_down_kbps: float, z_val: float) -> str:
